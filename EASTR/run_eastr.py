@@ -1,4 +1,6 @@
 import argparse
+from EASTR import get_spurious_introns, utils
+from io import StringIO
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -11,20 +13,110 @@ def parse_args():
         help="reference fasta genome used in alignment")
     
     parser.add_argument(
-        "-B", "--bam",
+        "-bam",
         help="Input BAM file to emend alignments")
+
+    parser.add_argument(
+        "-A",
+        help="Matching score, default = 2",
+        default=2)
+
+    parser.add_argument(
+        "-B",
+        help="Mismatching penalty, default = 4",
+        default=2)
+
+    parser.add_argument(
+        "-O",
+        nargs=2,
+        type=int,
+        help="Gap open penalty, default = [4, 24]",
+        default=[4,24])
+    
+    parser.add_argument(
+        "-E",
+        nargs=2,
+        type=int,
+        help="Gap extension penalty, default = [2, 1]. A gap of length k costs min(O1+k*E1, O2+k*E2).",
+        default=[2,1])
+
+    parser.add_argument(
+        "-k",
+        help="kmer length for alignment, default=7",
+        default=7
+    )
+
+    parser.add_argument(
+        "--scoreN",
+        help="Score of a mismatch involving ambiguous bases, default=1",
+        default=1
+    )
+
+    parser.add_argument(
+        "-w",
+        help="minimizer window size, default=7",
+        default=7
+    )
+
+    parser.add_argument(
+        "-p",
+        help="Number of parallel processes, default=1",
+        default=1
+    )
+    
+    parser.add_argument("-o", default='stdout',metavar='FILE',
+                        help="write output to FILE; the default output is to terminal")
+
 
     return parser.parse_args()
 
+def minimap_scoring(args):
+    gap_open_penalty = args.O
+    gap_ext_penalty = args.E
+    mismatch_penalty = args.B
+    match_score = args.A
+    ambiguous_score = args.scoreN
+
+    scoring=[
+        match_score,
+        mismatch_penalty,
+        gap_open_penalty[0], 
+        gap_ext_penalty[0],
+        gap_open_penalty[1], 
+        gap_ext_penalty[1],
+        ambiguous_score]
+    
+    return scoring
 
 def main():
     args = parse_args()
-    REF_FA = args.reference
-    BAM = args.bam
-    print(args)
-    print(REF_FA, BAM)
+    # p = args.p
+    scoring = minimap_scoring(args)
+    k = args.k
+    w = args.w
+    out = args.o
+    ref_fa = args.reference
+    
+    
+    # if fai file not found, make one
+    utils.index_fasta(ref_fa)
+    
+    bam = args.bam
+    read_length = utils.get_read_length_from_bam(bam)
+    
+    introns = get_spurious_introns.get_introns_regtools(bam)
+    introns = get_spurious_introns.run_junctions(introns, scoring, ref_fa, read_length, k, w)
+    
+    if out=="stdout":
+        output = StringIO()
+        introns.to_csv(output)
+        
+    else:
+        introns.to_csv(out)
+
 
 
 if __name__ == '__main__':
     main()
+    
 
