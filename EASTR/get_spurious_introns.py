@@ -10,6 +10,8 @@ import subprocess
 import shlex
 from io import StringIO
 import re
+import utils
+import numpy as np
 
 # def get_introns_from_bam(samfile):
 #     introns={}
@@ -49,6 +51,7 @@ def get_introns_regtools(bamfile:str) -> pd.DataFrame:
     df['juncEnd'] = df['anchorEnd'] - df['3o']
     
     df = df.set_index(["chrom","juncStart","juncEnd"]).sort_index()
+    df.drop(labels = 'anchorSize',axis=1,inplace=True)
 
     return df
 
@@ -58,7 +61,7 @@ def get_seq(chrom,start,end,ref_fa):
     seq = fasta.fetch(region=chrom,start=start,end=end)
     return seq
 
-def align_seq_pair(rseq,qseq,scoring):
+def align_seq_pair(rseq,qseq,scoring,k,w):
     #TODO ambiguous bases not working
     a = mp.Aligner(seq=rseq,k=7,w=7,best_n=1,scoring=scoring)
     itr = list(a.map(qseq,MD=True,cs=True))
@@ -123,7 +126,7 @@ def calc_alignment_score(hit,scoring,read_length):
 #     else:
 #         return None
 
-def get_alignment(chrom, jstart, jend, o5, o3, scoring, ref_fa, read_length):
+def get_alignment(chrom, jstart, jend, o5, o3, scoring, ref_fa, read_length,k,w):
     hits = []
 
     for o in (o5,o3):
@@ -134,19 +137,20 @@ def get_alignment(chrom, jstart, jend, o5, o3, scoring, ref_fa, read_length):
             
         rseq = get_seq(chrom, rstart, rend, ref_fa)
         qseq = get_seq(chrom, qstart, qend, ref_fa)
-        hit = align_seq_pair(rseq, qseq, scoring)
+        hit = align_seq_pair(rseq, qseq, scoring,k,w)
 
         if hit:
             score = calc_alignment_score(hit, scoring,read_length)
             hits.append((hit,score))
+
+        else:
+            hits.append((None,-4*read_length))
         
-        if not hits:
-            return None
+    return hits
         
 
-    return max(hits, key=lambda x:x[1])
-
-def run_junctions(introns, scoring, ref_fa, read_length):
+def run_junctions(bam, scoring, ref_fa, read_length,k,w):
+    introns = get_introns_regtools(bam)
     
     for junc,row in introns.iterrows():
         chrom = junc[0]
@@ -154,32 +158,33 @@ def run_junctions(introns, scoring, ref_fa, read_length):
         jend = junc[2]
         o5 = row["5o"]
         o3 = row["3o"]
-        alignment = get_alignment(chrom,jstart,jend,o5,o3,scoring, ref_fa, read_length)
-        if alignment is not None:
-            introns.loc[junc,"score"] = alignment[1]
+        hits = get_alignment(chrom, jstart, jend, o5, o3, scoring, ref_fa, read_length,k,w)
+        
+    
+        introns.loc[junc,"5o_score"] = hits[0][1]
+        introns.loc[junc,"3o_score"] = hits[1][1]
+        introns.loc[junc,"max_o_score"] = np.nanmax([hits[0][1],hits[1][1]])
+        
+    return introns
         
     
 
-if __name__ == '__main__':
-    bam = "tests/data/ERR188044_chrX.bam"
-    samfile = pysam.AlignmentFile(bam, "rb")
-    #chroms = [x['SN'] for x in samfile.header['SQ']]
-    
-
-    import time
-    start = time.time()
-    introns = get_introns_regtools(bam)
-    introns['score'] = None
-    end = time.time()
-    print(f"took {end-start} seconds")
-
+# if __name__ == '__main__':
+    # import time
     # start = time.time()
-    # introns_bam=get_introns_from_bam(samfile)
-    # end=time.time()
-    # print(f"took {end-start} seconds")
-
-
-    scoring=[2,4,4,2,24,1,1]
-    ref_fa = "tests/data/chrX.fa"
     
-    introns[~introns['score'].isna()]
+    # bam = "tests/data/ERR188044_chrX.bam"
+    # ref_fa = "tests/data/chrX.fa"
+    # scoring=[2,4,4,2,24,1,1]
+    # read_length = utils.get_read_length_from_bam(bam)
+    # k = 7
+    # w = 7
+    # #chroms = [x['SN'] for x in samfile.header['SQ']]
+
+    # introns = get_introns_regtools(bam)
+    # introns = run_junctions(introns, scoring, ref_fa, read_length,k,w)
+    
+    # end = time.time()
+    # print(f"took {end-start} seconds")
+    
+    # introns[~introns['score'].isna()]

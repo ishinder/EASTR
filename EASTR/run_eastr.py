@@ -1,5 +1,5 @@
 import argparse
-from EASTR import get_spurious_introns, utils
+import get_spurious_introns, utils
 from io import StringIO
 
 def parse_args():
@@ -92,28 +92,23 @@ def main():
     args = parse_args()
     # p = args.p
     scoring = minimap_scoring(args)
-    k = args.k
-    w = args.w
-    out = args.o
     ref_fa = args.reference
-    
-    
-    # if fai file not found, make one
+    bam = args.bam
+
+    utils.index_bam(bam)
     utils.index_fasta(ref_fa)
     
-    bam = args.bam
     read_length = utils.get_read_length_from_bam(bam)
+
+    introns = get_spurious_introns.run_junctions(bam, scoring, ref_fa, 
+                                                 read_length, args.k, args.w)
     
-    introns = get_spurious_introns.get_introns_regtools(bam)
-    introns = get_spurious_introns.run_junctions(introns, scoring, ref_fa, read_length, k, w)
-    
-    if out=="stdout":
+    if args.o=="stdout":
         output = StringIO()
         introns.to_csv(output)
         
     else:
-        introns.to_csv(out)
-
+        introns.to_csv(args.o,sep='\t')
 
 
 if __name__ == '__main__':
