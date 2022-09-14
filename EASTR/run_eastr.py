@@ -1,5 +1,5 @@
 import argparse
-import get_spurious_introns, utils
+from EASTR import get_spurious_introns, utils
 from io import StringIO
 
 def parse_args():
