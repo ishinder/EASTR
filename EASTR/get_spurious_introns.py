@@ -10,7 +10,7 @@ import subprocess
 import shlex
 from io import StringIO
 import re
-import utils
+from EASTR import utils
 import numpy as np
 
 # def get_introns_from_bam(samfile):
