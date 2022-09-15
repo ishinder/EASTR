@@ -20,5 +20,6 @@ eastr -R tests/data/chrX.fa \
 -o tests/output/ERR188044_chrX_junctions.tsv 
 ```
 
-## <a name="requirements"></a> Required software
+## <a name="dependencies"></a> Dependencies
 1. regtools
+2. seqtk
