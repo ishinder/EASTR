@@ -1,6 +1,7 @@
 import argparse
-from EASTR import get_spurious_introns, utils
+from EASTR import get_spurious_introns, utils, filter_bam
 from io import StringIO
+from posixpath import dirname
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -64,8 +65,8 @@ def parse_args():
         default=1
     )
     
-    parser.add_argument("-o", default='stdout',metavar='FILE',
-                        help="write output to FILE; the default output is to terminal")
+    parser.add_argument("-o", default='stdout',metavar='DIRECTORY',
+                        help="write output to DIRECTORY; the default output is to terminal")
 
 
     return parser.parse_args()
@@ -103,12 +104,14 @@ def main():
     introns = get_spurious_introns.run_junctions(bam, scoring, ref_fa, 
                                                  read_length, args.k, args.w)
     
-    if args.o=="stdout":
-        output = StringIO()
-        introns.to_csv(output)
+    # if args.o=="stdout":
+    #     output = StringIO()
+    #     introns.to_csv(output)
         
-    else:
-        introns.to_csv(args.o,sep='\t')
+    # else:
+    #     introns.to_csv(args.o,sep='\t')
+        
+    filter_bam.filter_alignments(introns, ref_fa, bam, args.o)
 
 
 if __name__ == '__main__':

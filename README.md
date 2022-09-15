@@ -17,7 +17,7 @@ pip install .
 ```
 eastr -R tests/data/chrX.fa \
 -bam tests/data/ERR188044_chrX.bam \
--o tests/output/ERR188044_chrX_junctions.tsv 
+-o tests/output/
 ```
 
 ## <a name="dependencies"></a> Dependencies
