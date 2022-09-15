@@ -18,6 +18,6 @@ pip install .
 eastr -R tests/data/chrX.fa -bam tests/data/ERR188044_chrX.bam -o tests/output/
 ```
 
-## <a name="dependencies"></a> Dependencies
-1. regtools
-2. seqtk
+## <a name="dependencies"></a> Software Dependencies
+1. [regtools](https://regtools.readthedocs.io/en/latest/commands/junctions-extract/)
+2. [seqtk](https://github.com/lh3/seqtk)
