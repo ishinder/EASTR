@@ -25,10 +25,9 @@ def write_list_to_file(input, outfile):
         f.write('\n')
     f.close()
     
+#TODO modify NH tag for kept alignments
 
-
-def filter_alignments(introns, ref_fa, inbam, outdir): 
-    
+def filter_alignments(introns, ref_fa, inbam, outdir):   
     name = basename(inbam)
     name = ''.join(name.split('.')[:-1])
     outbam_filtered = outdir + "/" + name + "_filtered.bam"
@@ -40,40 +39,43 @@ def filter_alignments(introns, ref_fa, inbam, outdir):
     
     header = make_sam_header(ref_fa)
     spurAlignments = set() 
-    allAlignments = collections.defaultdict(list)
+    keepAlignments = collections.defaultdict(list)
     samfile = pysam.AlignmentFile(inbam, "rb") # type: ignore
 
-    for read in samfile.fetch(until_eof=True):
-        if len(read.blocks) == 1:
-            allAlignments[read.qname].append(read)
+    for alignment in samfile.fetch(until_eof=True):
+        if len(alignment.blocks) == 1:
+            keepAlignments[alignment.qname].append(alignment)
             continue
         
-        currentloc = read.pos
-        for i,cigarop in enumerate(read.cigar):
+        keep = True
+        currentloc = alignment.pos
+        for i,cigarop in enumerate(alignment.cigar):
             if (cigarop[0]==4): #substitution or insertion in query
                 continue
             if (cigarop[0]==1):
                 continue
             if(cigarop[0]==3):
-                key = (samfile.getrname(read.tid),currentloc,currentloc+cigarop[1])
+                key = (samfile.getrname(alignment.tid),currentloc,currentloc+cigarop[1])
                 if key in filt_introns.index:
-                    if read.is_secondary:
-                        continue 
-                    else:
-                        spurAlignments.add(read.qname)           
-                else:
-                    allAlignments[read.qname].append(read)     
+                    keep = False
+                    if not alignment.is_secondary:
+                        spurAlignments.add(alignment.qname)
+                        
             currentloc=currentloc+cigarop[1]
+            
+        if keep:
+            keepAlignments[alignment.qname].append(alignment)     
         
-    writeKeys = allAlignments.keys() - spurAlignments
-    writeAlignments = {key: allAlignments[key] for key in writeKeys}
+    writeKeys = keepAlignments.keys() - spurAlignments
+    writeAlignments = {key: keepAlignments[key] for key in writeKeys}
 
+    #make new bam
     outf = pysam.AlignmentFile(outbam_filtered, "wb", header=header) # type: ignore
-        
     for alignments in writeAlignments.values():
         for alignment in alignments:
             w=outf.write(alignment)
     outf.close()
+    x=pysam.sort("-o", outbam_filtered, outbam_filtered)
     
     write_list_to_file(spurAlignments, outlist_reads)
     
@@ -81,7 +83,7 @@ def filter_alignments(introns, ref_fa, inbam, outdir):
 if __name__ == '__main__':
     
     import time
-    from EASTR import get_spurious_introns
+    from EASTR import get_spurious_introns, utils
     
     start = time.time()
     outdir = 'tests/output/'
@@ -94,5 +96,5 @@ if __name__ == '__main__':
     introns = get_spurious_introns.run_junctions(bam, scoring, ref_fa, read_length,k,w)
     filter_alignments(introns, ref_fa, bam, outdir)
     end = time.time()
-    print(f"took {end-start} seconds")
+    print(f"took {end-start} seconds") #107 seconds
 
