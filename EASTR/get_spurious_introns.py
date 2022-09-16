@@ -12,6 +12,8 @@ from io import StringIO
 import re
 from EASTR import utils
 import numpy as np
+from multiprocessing import Pool
+from collections import namedtuple
 
 # def get_introns_from_bam(samfile):
 #     introns={}
@@ -34,11 +36,16 @@ import numpy as np
 #     return introns
 
 #TODO: regtools is 2.2X faster than the function above (80 vs. 173 seconds).
-def get_introns_regtools(bamfile:str) -> pd.DataFrame:
+def get_introns_regtools(bamfile:str, chrom=None) -> pd.DataFrame:
     if not os.path.exists(bamfile + ".bai"):
         pysam.index(bamfile)
     
-    cmd = "regtools junctions extract -s 0 -a 1 -m 1 -M 100000000 " + bamfile
+    if chrom is None:
+        cmd = "regtools junctions extract -s 0 -a 1 -m 1 -M 100000000 " + bamfile
+        
+    else: 
+        cmd = f"regtools junctions extract -s 0 -a 1 -m 1 -M 100000000 -r {chrom}" + bamfile
+        
     a = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE)
     b = StringIO(a.communicate()[0].decode('utf-8'))
 
@@ -128,15 +135,27 @@ def calc_alignment_score(hit,scoring,read_length):
 
 def get_alignment(chrom, jstart, jend, o5, o3, scoring, ref_fa, read_length,k,w):
     hits = []
+    Overhang = namedtuple("Overhang","rstart rend qstart qend")
+    
+    #o5
+    rstart = jstart - o5
+    rend = jstart + (read_length -  o5)
+    qstart = jend - o5
+    qend = jend + (read_length -  o5)
+    o5 = Overhang(rstart, rend, qstart, qend)
+    
+    #o3
+    rstart = jend - (read_length - o3)
+    rend =  jend + o3
+    qstart = jstart - (read_length - o3)
+    qend = jstart + o3
+    o3 = Overhang(rstart, rend, qstart, qend)
+    
 
     for o in (o5,o3):
-        rstart = jstart - o
-        rend = jstart + (read_length -  o)
-        qstart = jend - o
-        qend = jend + (read_length -  o)
             
-        rseq = get_seq(chrom, rstart, rend, ref_fa)
-        qseq = get_seq(chrom, qstart, qend, ref_fa)
+        rseq = get_seq(chrom, o.rstart, o.rend, ref_fa)
+        qseq = get_seq(chrom, o.qstart, o.qend, ref_fa)
         hit = align_seq_pair(rseq, qseq, scoring,k,w)
 
         if hit:
@@ -147,7 +166,8 @@ def get_alignment(chrom, jstart, jend, o5, o3, scoring, ref_fa, read_length,k,w)
             hits.append((None,-4*read_length))
         
     return hits
-        
+
+    
 
 def run_junctions(bam, scoring, ref_fa, read_length,k,w):
     introns = get_introns_regtools(bam)
@@ -166,25 +186,26 @@ def run_junctions(bam, scoring, ref_fa, read_length,k,w):
         introns.loc[junc,"max_o_score"] = np.nanmax([hits[0][1],hits[1][1]])
         
     return introns
+
+#def run_junctions_parallel(bam,scoring,ref_fa,read_length,k,w)
         
     
 
-# if __name__ == '__main__':
-    # import time
-    # start = time.time()
+if __name__ == '__main__':
+    import time
+    start = time.time()
     
-    # bam = "tests/data/ERR188044_chrX.bam"
-    # ref_fa = "tests/data/chrX.fa"
-    # scoring=[2,4,4,2,24,1,1]
-    # read_length = utils.get_read_length_from_bam(bam)
-    # k = 7
-    # w = 7
-    # #chroms = [x['SN'] for x in samfile.header['SQ']]
+    bam = "tests/data/ERR188044_chrX.bam"
+    ref_fa = "tests/data/chrX.fa"
+    scoring=[2,4,4,2,24,1,1]
+    read_length = utils.get_read_length_from_bam(bam)
+    k = 7
+    w = 7
+    #chroms = [x['SN'] for x in samfile.header['SQ']]
 
-    # introns = get_introns_regtools(bam)
-    # introns = run_junctions(introns, scoring, ref_fa, read_length,k,w)
+    introns = run_junctions(bam, scoring, ref_fa, read_length,k,w)
     
-    # end = time.time()
-    # print(f"took {end-start} seconds")
+    end = time.time()
+    print(f"took {end-start} seconds")
     
-    # introns[~introns['score'].isna()]
+    introns[~introns['score'].isna()]

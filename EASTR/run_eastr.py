@@ -1,6 +1,7 @@
 import argparse
-from EASTR import get_spurious_introns, utils
+from EASTR import get_spurious_introns, utils, filter_bam
 from io import StringIO
+from posixpath import basename
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -102,13 +103,16 @@ def main():
 
     introns = get_spurious_introns.run_junctions(bam, scoring, ref_fa, 
                                                  read_length, args.k, args.w)
+    filter_bam.filter_alignments(introns, ref_fa, bam, args.o)
     
-    if args.o=="stdout":
+    if args.o=="stdout": #TODO - this should be required. 
         output = StringIO()
         introns.to_csv(output)
         
     else:
-        introns.to_csv(args.o,sep='\t')
+        name = basename(bam)
+        name = ''.join(name.split('.')[:-1])
+        introns.to_csv(args.o + f"/{name}_junctions.tsv",sep='\t')
 
 
 if __name__ == '__main__':
