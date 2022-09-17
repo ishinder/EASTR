@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "EASTR"
+version = "0.0.1"
+description = "Tool for emending alignments of spuriously spliced transcript reads"
+authors = [{name = "Ida Shinder", email =  "ishinde1@jhmi.edu"}, {name = "Ida Shinder"}]
+requires-python = ">=3.7"
+readme = "README.md"
+dependencies = [
+    "biopython",
+    "mappy",
+    "numpy",
+    "pandas",
+    "pysam",
+]
+
+[project.urls]
+GitHub = "https://github.com/ishinder/EASTR"
+
+
+[project.scripts]
+eastr = "EASTR.run_eastr:main"
+
