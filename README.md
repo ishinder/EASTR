@@ -4,8 +4,11 @@
 
 ```bash
 # Clone repository
-git clone https://github.com/ishinder/EASTR
+git clone --recurse-submodules https://github.com/ishinder/EASTR
 cd EASTR
+
+# Build dependencies
+make
 
 # Create and activate virtual environment
 python -m virtualenv .venv
