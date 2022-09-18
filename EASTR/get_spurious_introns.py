@@ -152,8 +152,7 @@ def get_alignment(chrom, jstart, jend, o5, o3, scoring, ref_fa, read_length,k,w)
     o3 = Overhang(rstart, rend, qstart, qend)
     
 
-    for o in (o5,o3):
-            
+    for o in (o5,o3): 
         rseq = get_seq(chrom, o.rstart, o.rend, ref_fa)
         qseq = get_seq(chrom, o.qstart, o.qend, ref_fa)
         hit = align_seq_pair(rseq, qseq, scoring,k,w)
