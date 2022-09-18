@@ -1,6 +1,0 @@
-[submodule "regtools"]
-	path = regtools
-	url = https://github.com/griffithlab/regtools
-[submodule "seqtk"]
-	path = seqtk
-	url = https://github.com/lh3/seqtk.git

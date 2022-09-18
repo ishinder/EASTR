@@ -15,28 +15,7 @@
 	cd EASTR
 	```
 
-2. Check if dependencies are installed
-
-	```bash
-	# Check if RegTools is installed
-	make check_regtools
-
-	# Check if Seqtk is installed
-	make check_regtools
-	```
-
-	If all dependencies are found then go to Step 4.
-
-3. (Optional) If dependencies are not installed then install them via the follows commands (as applicable)
-	```bash
-	# If RegTools isn't installed
-	make regtools
-
-	# If Seqtk isn't installed
-	make seqtk
-	```
-
-4. Install EASTR
+2. Install EASTR
 	```bash
 	# (OPTIONAL) Install in a Python virtual environment
 	# python3 -m virtualenv venv # (OPTIONAL)

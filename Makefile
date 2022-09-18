@@ -1,28 +1,16 @@
-.PHONY: all regtools seqtk clean
+PACAKGE = EASTR
+.PHONY: all clean
 
-all: regtools seqtk
-
-check_regtools:
-	@echo "Checking if regtools is installed..."
-	@which regtools
-
-check_seqtk:
-	@echo "Checking if seqtk is installed..."
-	@which seqtk
+all: install
 
 install:
+	@echo "Checking if RegTools is installed..."
+	@which regtools || echo "RegTools not found. Please install";exit 1
+	@echo "Checking if Seqtk is installed..."
+	@which seqtk || echo "Seqtk not found. Please install"; exit 1
 	@pip install .
-
-regtools:
-	@echo "Building regtools"
-	@cd regtools/; mkdir build; cd build/; cmake ..; make
-
-seqtk:
-	@echo "Building seqtk"
-	@$(MAKE) -C seqtk
 
 clean:
 	@echo "Cleaning"
-	@$(MAKE) -C regtools/build clean
-	@$(MAKE) -C seqtk/ clean
+	@pip uninstall -y ${PACAKGE}
 	@echo "Done"
