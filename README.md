@@ -11,7 +11,7 @@
 1. Clone source repository
 
 	```bash
-	git clone --recurse-submodules https://github.com/ishinder/EASTR
+	git clone https://github.com/ishinder/EASTR
 	cd EASTR
 	```
 
