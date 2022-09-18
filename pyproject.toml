@@ -2,12 +2,11 @@
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
-
 [project]
 name = "EASTR"
 version = "0.0.1"
 description = "Tool for emending alignments of spuriously spliced transcript reads"
-authors = [{name = "Ida Shinder", email =  "ishinde1@jhmi.edu"}, {name = "Ida Shinder"}]
+authors = [{name = "Ida Shinder", email = "ishinde1@jhmi.edu"}, {name = "Ida Shinder"}]
 requires-python = ">=3.7"
 readme = "README.md"
 dependencies = [
@@ -19,14 +18,11 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["EASTR"]
-include = ["*"]  # alternatively: `exclude = ["additional*"]`
-namespaces = false
+where = ["./"]
+include = ["EASTR"]
 
 [project.urls]
 GitHub = "https://github.com/ishinder/EASTR"
 
-
 [project.scripts]
 eastr = "EASTR.run_eastr:main"
-
