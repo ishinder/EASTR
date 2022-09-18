@@ -2,6 +2,16 @@
 
 all: regtools seqtk
 
+check_regtools:
+	@echo "Checking if regtools is installed..."
+	@which regtools
+
+check_seqtk:
+	@echo "Checking if seqtk is installed..."
+	@which seqtk
+
+install:
+	@pip install .
 
 regtools:
 	@echo "Building regtools"

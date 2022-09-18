@@ -18,6 +18,11 @@ dependencies = [
     "pysam",
 ]
 
+[tool.setuptools.packages.find]
+where = ["EASTR"]
+include = ["*"]  # alternatively: `exclude = ["additional*"]`
+namespaces = false
+
 [project.urls]
 GitHub = "https://github.com/ishinder/EASTR"
 
