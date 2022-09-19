@@ -2,6 +2,7 @@ import argparse
 from EASTR import get_spurious_introns, utils, filter_bam
 from io import StringIO
 from posixpath import basename
+import pandas as pd
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -9,14 +10,16 @@ def parse_args():
         description="Emend alignments of spuriously spliced transcript reads"
     )
 
+    #required args
     parser.add_argument(
         "-R", "--reference",
-        help="reference fasta genome used in alignment")
+        help="reference fasta genome used in alignment", required=True)
     
     parser.add_argument(
-        "-bam",
+        "-bam",required=True,
         help="Input BAM file to emend alignments")
 
+    #minimap2 args
     parser.add_argument(
         "-A",
         help="Matching score, default = 2",
@@ -59,15 +62,19 @@ def parse_args():
         default=7
     )
 
+    #output args
+    parser.add_argument("--out_introns", default='stdout',metavar='FILE',
+                        help="write introns to FILE; the default output is to terminal")
+
+    parser.add_argument("--out_bam", metavar='FILE',
+                        help="write filtered bam to FILE")
+
+    #other args
     parser.add_argument(
         "-p",
         help="Number of parallel processes, default=1",
         default=1
     )
-    
-    parser.add_argument("-o", default='stdout',metavar='FILE',
-                        help="write output to FILE; the default output is to terminal")
-
 
     return parser.parse_args()
 
@@ -101,19 +108,25 @@ def main():
     
     read_length = utils.get_read_length_from_bam(bam)
 
-    introns = get_spurious_introns.run_junctions(bam, scoring, ref_fa, 
-                                                 read_length, args.k, args.w)
-    filter_bam.filter_alignments(introns, ref_fa, bam, args.o)
+    # introns = get_spurious_introns.run_junctions(bam, scoring, ref_fa, 
+    #                                              read_length, args.k, args.w)
     
-    if args.o=="stdout": #TODO - this should be required. 
-        output = StringIO()
-        introns.to_csv(output)
-        
+    # filter_bam.filter_alignments(introns, ref_fa, bam, args.o)
+    
+    spurious_introns = get_spurious_introns.filter_alignments_from_bam(
+            ref_fa, bam, scoring, read_length, args.k, args.w, outbam=args.out_bam)
+    
+    df = pd.Series(spurious_introns).reset_index()
+    if args.out_introns == "stdout":
+        out_introns = StringIO()
+          
     else:
-        name = basename(bam)
-        name = ''.join(name.split('.')[:-1])
-        introns.to_csv(args.o + f"/{name}_junctions.tsv",sep='\t')
+        out_introns=args.out_introns
 
+    df.to_csv(out_introns,header=False,index=False, sep='\t')
+
+    #TODO: do not make filtered bam
+    #TODO: get spur introns only
 
 if __name__ == '__main__':
     main()
