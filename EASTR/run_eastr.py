@@ -1,8 +1,10 @@
 import argparse
-from EASTR import get_spurious_introns, utils, filter_bam
+from EASTR import utils, filter_bam
 from io import StringIO
 from posixpath import basename
 import pandas as pd
+
+from EASTR import filter_bam
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -23,12 +25,14 @@ def parse_args():
     parser.add_argument(
         "-A",
         help="Matching score, default = 2",
-        default=2)
+        default=2,
+        type=int)
 
     parser.add_argument(
         "-B",
         help="Mismatching penalty, default = 4",
-        default=2)
+        default=2,
+        type=int)
 
     parser.add_argument(
         "-O",
@@ -47,19 +51,29 @@ def parse_args():
     parser.add_argument(
         "-k",
         help="kmer length for alignment, default=7",
-        default=7
+        default=7,
+        type=int
     )
 
     parser.add_argument(
         "--scoreN",
         help="Score of a mismatch involving ambiguous bases, default=1",
-        default=1
+        default=1,
+        type=int
     )
 
     parser.add_argument(
         "-w",
         help="minimizer window size, default=7",
-        default=7
+        default=7, 
+        type=int
+    )
+
+    parser.add_argument(
+        "-m",
+        help="Discard chains with chaining score <INT [14].",
+        default=40, 
+        type=int
     )
 
     #output args
@@ -75,6 +89,9 @@ def parse_args():
         help="Number of parallel processes, default=1",
         default=1
     )
+
+    parser.add_argument("--removed_reads", metavar='FILE',
+                        help="write filtered bam to FILE")
 
     return parser.parse_args()
 
@@ -113,10 +130,11 @@ def main():
     
     # filter_bam.filter_alignments(introns, ref_fa, bam, args.o)
     
-    spurious_introns = get_spurious_introns.filter_alignments_from_bam(
-            ref_fa, bam, scoring, read_length, args.k, args.w, outbam=args.out_bam)
+    spurious_introns, removed_reads = filter_bam.filter_alignments_from_bam(
+            ref_fa, bam, scoring, read_length, args.k, args.w, args.m, outbam=args.out_bam)
     
     df = pd.Series(spurious_introns).reset_index()
+    
     if args.out_introns == "stdout":
         out_introns = StringIO()
           
@@ -124,6 +142,13 @@ def main():
         out_introns=args.out_introns
 
     df.to_csv(out_introns,header=False,index=False, sep='\t')
+
+    if args.removed_reads is not None:
+        df = pd.DataFrame(removed_reads, columns=['qname','is_read1'])
+        df['read'] = 2
+        df.loc[df['is_read1'],'read'] = 1
+        df[['qname','read']].to_csv(args.removed_reads,index=False)
+
 
     #TODO: do not make filtered bam
     #TODO: get spur introns only

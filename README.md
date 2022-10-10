@@ -5,6 +5,7 @@
 
 - [RegTools](https://regtools.readthedocs.io/en/latest/)
 - [Seqtk](https://github.com/lh3/seqtk)
+- [samtools](https://github.com/samtools/samtools)
 
 ## Getting Started
 
@@ -52,5 +53,7 @@ options:
 ```shell
 eastr -R tests/data/chrX.fa \
     -bam tests/data/ERR188044_chrX.bam \
-    -o tests/output/
+    --out_introns tests/output/ERR188044_chrX_spurious_introns.bed
+    --out_bam tests/output/ERR188044_chrX_filtered.bam
+    --removed_reads tests/output/ERR188044_chrX_removed_reads.txt
 ```
