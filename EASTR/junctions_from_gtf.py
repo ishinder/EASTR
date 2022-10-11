@@ -51,8 +51,7 @@ def extract_splice_sites(gtf_path):
     junctions = dd(list)
     for tran, (chrom, strand, exons) in trans.items():
         for i in range(1, len(exons)):
-            junctions[(chrom, exons[i-1][1], exons[i][0] + 1, strand)].append(tran) #bed coordinates
+            junctions[(chrom, exons[i-1][1], exons[i][0] - 1, strand)].append(tran) #bed coordinates
     
-    junctions = sorted(junctions)
 
     return junctions
