@@ -158,6 +158,7 @@ cython_debug/
 
 #testing
 tests/output/
+tests/other
 
 #misc
 delete/
