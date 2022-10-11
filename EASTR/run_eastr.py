@@ -1,7 +1,10 @@
 import argparse
-from EASTR import get_spurious_introns, utils, filter_bam
+from EASTR import utils, filter_bam
 from io import StringIO
-from posixpath import dirname
+from posixpath import basename
+import pandas as pd
+
+from EASTR import filter_bam
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -9,23 +12,27 @@ def parse_args():
         description="Emend alignments of spuriously spliced transcript reads"
     )
 
+    #required args
     parser.add_argument(
         "-R", "--reference",
-        help="reference fasta genome used in alignment")
+        help="reference fasta genome used in alignment", required=True)
     
     parser.add_argument(
-        "-bam",
+        "-bam",required=True,
         help="Input BAM file to emend alignments")
 
+    #minimap2 args
     parser.add_argument(
         "-A",
         help="Matching score, default = 2",
-        default=2)
+        default=2,
+        type=int)
 
     parser.add_argument(
         "-B",
         help="Mismatching penalty, default = 4",
-        default=2)
+        default=2,
+        type=int)
 
     parser.add_argument(
         "-O",
@@ -44,30 +51,47 @@ def parse_args():
     parser.add_argument(
         "-k",
         help="kmer length for alignment, default=7",
-        default=7
+        default=7,
+        type=int
     )
 
     parser.add_argument(
         "--scoreN",
         help="Score of a mismatch involving ambiguous bases, default=1",
-        default=1
+        default=1,
+        type=int
     )
 
     parser.add_argument(
         "-w",
         help="minimizer window size, default=7",
-        default=7
+        default=7, 
+        type=int
     )
 
+    parser.add_argument(
+        "-m",
+        help="Discard chains with chaining score <INT [14].",
+        default=40, 
+        type=int
+    )
+
+    #output args
+    parser.add_argument("--out_introns", default='stdout',metavar='FILE',
+                        help="write introns to FILE; the default output is to terminal")
+
+    parser.add_argument("--out_bam", metavar='FILE',
+                        help="write filtered bam to FILE")
+
+    #other args
     parser.add_argument(
         "-p",
         help="Number of parallel processes, default=1",
         default=1
     )
-    
-    parser.add_argument("-o", default='stdout',metavar='DIRECTORY',
-                        help="write output to DIRECTORY; the default output is to terminal")
 
+    parser.add_argument("--removed_reads", metavar='FILE',
+                        help="write filtered bam to FILE")
 
     return parser.parse_args()
 
@@ -101,18 +125,33 @@ def main():
     
     read_length = utils.get_read_length_from_bam(bam)
 
-    introns = get_spurious_introns.run_junctions(bam, scoring, ref_fa, 
-                                                 read_length, args.k, args.w)
+    # introns = get_spurious_introns.run_junctions(bam, scoring, ref_fa, 
+    #                                              read_length, args.k, args.w)
     
-    # if args.o=="stdout":
-    #     output = StringIO()
-    #     introns.to_csv(output)
-        
-    # else:
-    #     introns.to_csv(args.o,sep='\t')
-        
-    filter_bam.filter_alignments(introns, ref_fa, bam, args.o)
+    # filter_bam.filter_alignments(introns, ref_fa, bam, args.o)
+    
+    spurious_introns, removed_reads = filter_bam.filter_alignments_from_bam(
+            ref_fa, bam, scoring, read_length, args.k, args.w, args.m, outbam=args.out_bam)
+    
+    df = pd.Series(spurious_introns).reset_index()
+    
+    if args.out_introns == "stdout":
+        out_introns = StringIO()
+          
+    else:
+        out_introns=args.out_introns
 
+    df.to_csv(out_introns,header=False,index=False, sep='\t')
+
+    if args.removed_reads is not None:
+        df = pd.DataFrame(removed_reads, columns=['qname','is_read1'])
+        df['read'] = 2
+        df.loc[df['is_read1'],'read'] = 1
+        df[['qname','read']].to_csv(args.removed_reads,index=False)
+
+
+    #TODO: do not make filtered bam
+    #TODO: get spur introns only
 
 if __name__ == '__main__':
     main()
