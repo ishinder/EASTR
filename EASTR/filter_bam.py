@@ -137,9 +137,17 @@ def write_filtered_bam(outbam, samfile, spurious_alignments, spurious_mates, NH,
 
 
 def filter_alignments_from_bam(ref_fa, bam, scoring, read_length, k, w, m, outbam=None):
+
+    #check if file is cram or bam:
+    if bam.split('.')[-1]=="bam":
+        samfile = pysam.AlignmentFile(bam, "rb") # type: ignore
+    
+    else :
+        samfile = pysam.AlignmentFile(bam, "rc") 
+
     removed_reads = set()
     chrom_sizes = utils.get_chroms_list_from_bam(bam)
-    samfile = pysam.AlignmentFile(bam, "rb") # type: ignore
+    
     introns = get_introns_from_bam(samfile)
     index = index_samfile_by_reads(samfile)
     spurious_alignments, spurious_mates, spurious_introns, NH = find_spurious_alignments(introns, index, ref_fa,
