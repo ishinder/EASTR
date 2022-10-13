@@ -24,14 +24,14 @@ def parse_args():
     #minimap2 args
     parser.add_argument(
         "-A",
-        help="Matching score, default = 2",
-        default=2,
+        help="Matching score, default = 3",
+        default=3,
         type=int)
 
     parser.add_argument(
         "-B",
-        help="Mismatching penalty, default = 4",
-        default=2,
+        help="Mismatching penalty, default = 3",
+        default=3,
         type=int)
 
     parser.add_argument(
@@ -51,7 +51,7 @@ def parse_args():
     parser.add_argument(
         "-k",
         help="kmer length for alignment, default=7",
-        default=7,
+        default=15,
         type=int
     )
 
@@ -65,14 +65,14 @@ def parse_args():
     parser.add_argument(
         "-w",
         help="minimizer window size, default=7",
-        default=7, 
+        default=10, 
         type=int
     )
 
     parser.add_argument(
         "-m",
         help="Discard chains with chaining score <INT [14].",
-        default=40, 
+        default=15, 
         type=int
     )
 
