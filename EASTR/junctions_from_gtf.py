@@ -1,8 +1,8 @@
-# adapted from hisat2_extract_splice_sites.py
-# https://github.com/DaehwanKimLab/hisat2/blob/master/hisat2_extract_splice_sites.py
+#adapted from hisat2_extract_splice_sites.py
 
 from collections import defaultdict as dd
-
+import pandas as pd
+import glob
 
 def extract_splice_sites(gtf_path):
     genes = dd(list)
@@ -51,7 +51,28 @@ def extract_splice_sites(gtf_path):
     junctions = dd(list)
     for tran, (chrom, strand, exons) in trans.items():
         for i in range(1, len(exons)):
-            junctions[(chrom, exons[i-1][1], exons[i][0] - 1, strand)].append(tran) #bed coordinates
+            junctions[(chrom, exons[i-1][1], exons[i][0]-1, strand)].append(tran) #intron bed coordinates
     
-
     return junctions
+
+# ref_gtf = '/ccb/salz1/mpertea/stringtie/paper/hg38c_protein_and_lncRNA.gtf'
+# ref_junctions = extract_splice_sites(ref_gtf)
+# cols = ['seqname','start','end','strand','transcripts']
+# ref_junctions = pd.Series(ref_junctions).rename_axis(cols[0:4]).reset_index(name=cols[4])
+
+
+# files = {"m40w7k7":[],"m14w1k3":[]}
+# for setting in files:
+
+#     f = glob.glob(f"/ccb/salz8-2/shinder/projects/EASTR_tests/chess_brain/BED/R2816*{setting}*.bed")
+#     files[setting] = f
+
+# spurious = {"m40w7k7":pd.DataFrame(),"m14w1k3":pd.DataFrame()}
+
+# spurious["m40w7k7"]=pd.read_csv(files["m40w7k7"][0],header=None,sep='\t', names=['seqname','start','end',"AS"])
+# spurious["m14w1k3"]=pd.read_csv(files["m14w1k3"][0],header=None,sep='\t', names=['seqname','start','end',"AS"])
+
+# compare = {}
+# compare["m40w7k7"] = pd.merge(spurious["m40w7k7"],ref_junctions,how="inner",on=['seqname','start','end'])
+# compare["m14w1k3"] = pd.merge(spurious["m14w1k3"],ref_junctions,how="inner",on=['seqname','start','end'])
+
