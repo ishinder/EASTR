@@ -37,6 +37,7 @@ def get_introns_from_bam(samfile):
                 continue
             if(cigarop[0]==3):
                 key = (samfile.getrname(alignment.tid),currentloc,currentloc+cigarop[1])
+                #TODO check that previous + next have cigarop==0
                 o5 = alignment.cigar[i-1][1]           
                 o3 = alignment.cigar[i+1][1]
                 if key not in introns:
@@ -92,7 +93,7 @@ def write_filtered_bam(outbam, samfile, spurious_alignments, spurious_mates, NH,
             continue 
         if alignment in spurious_mates: #this is a mate of a spurious alignment
             if alignment.is_proper_pair: #throwing out the second pair improves precision + sensitivity
-                removed_reads.add((alignment.qname,alignment.is_read1))
+                removed_reads.add((alignment.qname,alignment.is_read1)) #TODO incorrect?
                 continue
 
             alignment.mate_is_mapped = False
@@ -176,20 +177,20 @@ if __name__ == '__main__':
     ref_fa = "tests/data/chrX.fa"
     outbam = "tests/output/ERR188044_chrX_filtered.bam"
 
-    spur_introns,removed_reads = filter_alignments_from_bam(ref_fa, bam, scoring, read_length, k, w,m)
-    end = time.time()
-    print(f"took {end-start} seconds")
+    # spur_introns,removed_reads = filter_alignments_from_bam(ref_fa, bam, scoring, read_length, k, w,m)
+    # end = time.time()
+    # print(f"took {end-start} seconds")
     
-    start = time.time()
-    bam = "/ccb/salz8-2/shinder/projects/Geuvadis/BAM/ERR188025.bam"
-    outbam = "/ccb/salz8-2/shinder/projects/Geuvadis/EASTR2/BAM/ERR188025_filtered.bam"
-    out_introns = "/ccb/salz8-2/shinder/projects/Geuvadis/EASTR2/BED/ERR188025.bed"
-    read_length = utils.get_read_length_from_bam(bam)
-    outdir="/ccb/salz8-2/shinder/projects/Geuvadis/EASTR/BAM"
-    ref_fa= "/ccb/salz8-2/chess-brain/ref/hg38mod_noPARs.fa"
-    spurious_introns, removed_reads = filter_alignments_from_bam(ref_fa, bam, scoring, read_length, k, w, m, outbam=outbam)
-    end = time.time()
-    print(f"took {(end-start)/60} minutes")
+    # start = time.time()
+    # bam = "/ccb/salz8-2/shinder/projects/Geuvadis/BAM/ERR188025.bam"
+    # outbam = "/ccb/salz8-2/shinder/projects/Geuvadis/EASTR2/BAM/ERR188025_filtered.bam"
+    # out_introns = "/ccb/salz8-2/shinder/projects/Geuvadis/EASTR2/BED/ERR188025.bed"
+    # read_length = utils.get_read_length_from_bam(bam)
+    # outdir="/ccb/salz8-2/shinder/projects/Geuvadis/EASTR/BAM"
+    # ref_fa= "/ccb/salz8-2/chess-brain/ref/hg38mod_noPARs.fa"
+    # spurious_introns, removed_reads = filter_alignments_from_bam(ref_fa, bam, scoring, read_length, k, w, m, outbam=outbam)
+    # end = time.time()
+    # print(f"took {(end-start)/60} minutes")
 
     # #chroms = [x['SN'] for x in samfile.header['SQ']]
     
