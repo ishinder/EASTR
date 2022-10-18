@@ -14,15 +14,25 @@ from EASTR.alignment_utils import *
 import numpy as np
 
 
-def get_mate(alignment,index):
-    if alignment.mate_is_unmapped:
-        return None
-    mate_start = alignment.next_reference_start
-    mate_chrom = alignment.next_reference_name
-    tlen = alignment.tlen
-    for mate in index.find(alignment.qname):
-        if ((mate_start== mate.reference_start) & (mate_chrom == mate.reference_name) & (tlen == -mate.tlen)):
+# def get_mate(alignment,index):
+#     if alignment.mate_is_unmapped:
+#         return None
+#     mate_start = alignment.next_reference_start
+#     mate_chrom = alignment.next_reference_name
+#     tlen = alignment.tlen
+#     for mate in index.find(alignment.qname):
+#         if ((mate_start== mate.reference_start) & (mate_chrom == mate.reference_name) & (tlen == -mate.tlen)):
+#             return mate
+
+def find_mate(samfile,alignment):
+    qname=alignment.query_name
+    chrom=alignment.reference_name
+    pnext=alignment.next_reference_start
+
+    for mate in samfile.fetch(chrom,pnext,multiple_iterators=True):
+        if qname==mate.query_name and pnext==mate.reference_start:
             return mate
+
 
 
 
@@ -54,11 +64,10 @@ def index_samfile_by_reads(samfile):
     index.build()
     return index
 
-def find_spurious_alignments(introns, index, ref_fa, chrom_sizes, read_length, scoring, k, w, min_chain_score):
+def find_spurious_alignments(introns, samfile, ref_fa, chrom_sizes, read_length, scoring, k, w, min_chain_score, filter_bam=True):
     spurious_introns = {}
     spurious_alignments = set()
-    spurious_mates = set()
-    NH = collections.defaultdict(lambda:0)
+    NH = collections.defaultdict((int))
     seen_alignments = set()
     
     for key, values in introns.items():
@@ -73,44 +82,45 @@ def find_spurious_alignments(introns, index, ref_fa, chrom_sizes, read_length, s
             spurious_introns[key]=score 
             #TODO: any additional info to include -reads, alignments, etc?
             
+            if not filter_bam: #do not need to find spurious alignments if a filtered bam is not output. 
+                continue 
+
             alignments = [x[0] for x in values]
             for alignment in alignments:
-                if alignment not in seen_alignments:
+                akey = (alignment.query_name, alignment.reference_name, alignment.reference_start)
+                if akey not in seen_alignments:
+                    seen_alignments.add(akey)
+                    spurious_alignments.add(akey)
                     NH[(alignment.qname,alignment.is_read1)] += 1
-                    mate = get_mate(alignment, index)
-                    seen_alignments.add(alignment)
-                    spurious_alignments.add(alignment)
-                    spurious_mates.add(mate)
 
-    return spurious_alignments, spurious_mates, spurious_introns, NH
+                    if alignment.is_proper_pair:
+                        # mate = find_mate(samfile, alignment)
+                        mkey = (alignment.query_name, alignment.reference_name, alignment.next_reference_start)
+                        seen_alignments.add(mkey)
+                        spurious_alignments.add(mkey)
+                        NH[(alignment.qname, alignment.is_read2)] += 1
 
-def write_filtered_bam(outbam, samfile, spurious_alignments, spurious_mates, NH, index):
+    return spurious_alignments, spurious_introns, NH
+
+def write_filtered_bam(outbam, samfile, spurious_alignments, NH):
     removed_reads = set()
     outf = pysam.AlignmentFile(outbam, "wb", template=samfile)
 
     for alignment in samfile.fetch(until_eof=True, multiple_iterators=True):
-        if alignment.is_unmapped:
+        if alignment.is_unmapped: #TODO - decide if unmapped alignments should be included in output bam file?
             continue 
-        if alignment in spurious_mates: #this is a mate of a spurious alignment
-            if alignment.is_proper_pair: #throwing out the second pair improves precision + sensitivity
-                removed_reads.add((alignment.qname,alignment.is_read1)) #TODO incorrect?
-                continue
 
-            alignment.mate_is_mapped = False
-            alignment.tlen = 0
-            alignment.next_reference_start = alignment.reference_start
-            alignment.next_reference_name = alignment.reference_name
-            alignment.next_reference_id  = alignment.reference_id
-            #TODO check if any other tags/fields need to be updated
+        key = (alignment.query_name, alignment.reference_name, alignment.reference_start)
 
-        if alignment in spurious_alignments:
+        if key in spurious_alignments:
+
+            if alignment.get_tag('NH') == NH[(alignment.query_name, alignment.is_read1)]:
+                removed_reads.add((alignment.query_name, alignment.is_read1))
+
+
             continue
             #TODO: add custom tag instead?: alignment.tags = alignment.tags + [('XR',1)]
             #alignment.is_mapped = False
-            # if alignment.is_read2:
-            #     alignment.flag=133
-            # else:
-            #     alignment.flag=69
             # alignment.mapq = 0
             # alignment.cigar = []
             # alignment.cigarstring=None
@@ -150,12 +160,13 @@ def filter_alignments_from_bam(ref_fa, bam, scoring, read_length, k, w, m, outba
     chrom_sizes = utils.get_chroms_list_from_bam(bam)
     
     introns = get_introns_from_bam(samfile)
-    index = index_samfile_by_reads(samfile)
-    spurious_alignments, spurious_mates, spurious_introns, NH = find_spurious_alignments(introns, index, ref_fa,
+    spurious_alignments, spurious_introns, NH = find_spurious_alignments(introns, samfile, ref_fa,
                                                                         chrom_sizes, read_length, scoring, k, w, m)
+
+
     #write new bam
     if outbam is not None:
-        removed_reads = write_filtered_bam(outbam, samfile, spurious_alignments, spurious_mates, NH, index)
+        removed_reads = write_filtered_bam(outbam, samfile, spurious_alignments, NH)
     
     return spurious_introns, removed_reads
 
@@ -177,9 +188,9 @@ if __name__ == '__main__':
     ref_fa = "tests/data/chrX.fa"
     outbam = "tests/output/ERR188044_chrX_filtered.bam"
 
-    # spur_introns,removed_reads = filter_alignments_from_bam(ref_fa, bam, scoring, read_length, k, w,m)
-    # end = time.time()
-    # print(f"took {end-start} seconds")
+    spur_introns,removed_reads = filter_alignments_from_bam(ref_fa, bam, scoring, read_length, k, w,m,outbam=outbam)
+    end = time.time()
+    print(f"took {end-start} seconds")
     
     # start = time.time()
     # bam = "/ccb/salz8-2/shinder/projects/Geuvadis/BAM/ERR188025.bam"
