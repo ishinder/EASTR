@@ -13,27 +13,15 @@ from EASTR import utils, filter_bam
 from EASTR.alignment_utils import *
 import numpy as np
 
-
-# def get_mate(alignment,index):
-#     if alignment.mate_is_unmapped:
-#         return None
-#     mate_start = alignment.next_reference_start
-#     mate_chrom = alignment.next_reference_name
-#     tlen = alignment.tlen
-#     for mate in index.find(alignment.qname):
-#         if ((mate_start== mate.reference_start) & (mate_chrom == mate.reference_name) & (tlen == -mate.tlen)):
-#             return mate
-
-def find_mate(samfile,alignment):
-    qname=alignment.query_name
-    chrom=alignment.reference_name
-    pnext=alignment.next_reference_start
-
-    for mate in samfile.fetch(chrom,pnext,multiple_iterators=True):
-        if qname==mate.query_name and pnext==mate.reference_start:
-            return mate
-
-
+class Alignment:
+    def __init__(self,alignment):
+        self.query_name = alignment.query_name
+        self.reference_name = alignment.reference_name
+        self.reference_start = alignment.reference_start
+        self.NH = alignment.get_tag("NH")
+        self.is_proper_pair = alignment.is_proper_pair
+        self.is_read1 = alignment.is_read1
+        self.next_reference_start = alignment.next_reference_start
 
 
 def get_introns_from_bam(samfile):
@@ -46,23 +34,20 @@ def get_introns_from_bam(samfile):
             if (cigarop[0]==1):
                 continue
             if(cigarop[0]==3):
-                key = (samfile.getrname(alignment.tid),currentloc,currentloc+cigarop[1])
+                key = (alignment.reference_name,currentloc,currentloc+cigarop[1])
                 #TODO check that previous + next have cigarop==0
                 o5 = alignment.cigar[i-1][1]           
                 o3 = alignment.cigar[i+1][1]
+                a = Alignment(alignment)
                 if key not in introns:
-                    introns[key]=[(alignment,o5,o3)]
+                    introns[key]=[(a,o5,o3)]
                 else:
-                    introns[key].append((alignment,o5,o3))  
+                    introns[key].append((a,o5,o3))  
                     #TODO - first o5 is longest? last o3 is longest?
                     #TODO - check if any key has duplicate alignments??? len(set)==len(list)          
             currentloc=currentloc+cigarop[1]
     return introns
     
-def index_samfile_by_reads(samfile):
-    index = pysam.IndexedReads(samfile)
-    index.build()
-    return index
 
 def find_spurious_alignments(introns, samfile, ref_fa, chrom_sizes, read_length, scoring, k, w, min_chain_score, filter_bam=True):
     spurious_introns = {}
@@ -79,7 +64,7 @@ def find_spurious_alignments(introns, samfile, ref_fa, chrom_sizes, read_length,
         
         score = max(hits, key=lambda x: x[1])[1]
         if score > -scoring[1]*read_length:    
-            spurious_introns[key]=score 
+            spurious_introns[key] = score 
             #TODO: any additional info to include -reads, alignments, etc?
             
             if not filter_bam: #do not need to find spurious alignments if a filtered bam is not output. 
@@ -91,14 +76,13 @@ def find_spurious_alignments(introns, samfile, ref_fa, chrom_sizes, read_length,
                 if akey not in seen_alignments:
                     seen_alignments.add(akey)
                     spurious_alignments.add(akey)
-                    NH[(alignment.qname,alignment.is_read1)] += 1
+                    NH[(alignment.query_name,alignment.is_read1)] += 1
 
                     if alignment.is_proper_pair:
-                        # mate = find_mate(samfile, alignment)
                         mkey = (alignment.query_name, alignment.reference_name, alignment.next_reference_start)
                         seen_alignments.add(mkey)
                         spurious_alignments.add(mkey)
-                        NH[(alignment.qname, alignment.is_read2)] += 1
+                        NH[(alignment.query_name, not alignment.is_read1)] += 1
 
     return spurious_alignments, spurious_introns, NH
 
@@ -107,19 +91,15 @@ def write_filtered_bam(outbam, samfile, spurious_alignments, NH):
     outf = pysam.AlignmentFile(outbam, "wb", template=samfile)
 
     for alignment in samfile.fetch(until_eof=True, multiple_iterators=True):
-        if alignment.is_unmapped: #TODO - decide if unmapped alignments should be included in output bam file?
+        if alignment.is_unmapped: #TODO - decide if unmapped alignments should be included in output bam file (to convert back to fastq)?
             continue 
 
         key = (alignment.query_name, alignment.reference_name, alignment.reference_start)
-
         if key in spurious_alignments:
-
             if alignment.get_tag('NH') == NH[(alignment.query_name, alignment.is_read1)]:
                 removed_reads.add((alignment.query_name, alignment.is_read1))
-
-
             continue
-            #TODO: add custom tag instead?: alignment.tags = alignment.tags + [('XR',1)]
+            #TODO: add custom tag instead of removing?: alignment.tags = alignment.tags + [('XR',1)]
             #alignment.is_mapped = False
             # alignment.mapq = 0
             # alignment.cigar = []
@@ -127,16 +107,17 @@ def write_filtered_bam(outbam, samfile, spurious_alignments, NH):
             
             
         
-        if (alignment.qname, alignment.is_read1) in NH:
-            new_NH = alignment.get_tag("NH") - NH[(alignment.qname,alignment.is_read1)]
+        if (alignment.query_name, alignment.is_read1) in NH:
+            new_NH = alignment.get_tag("NH") - NH[(alignment.query_name,alignment.is_read1)]
             # print(alignment.qname,alignment.get_tag("NH"),new_NH)
             alignment.set_tag("NH", new_NH)
-            if new_NH == 0:
-                removed_reads.add((alignment.qname,alignment.is_read1))
+            if new_NH == 0: #TODO remove? (this should not happen)
+                os.remove(outbam)
+                raise Exception("NH tag cannot be zero")
                 # print("removed read: ",alignment.qname,alignment.is_read1)
                 continue
 
-            if new_NH < 0:
+            if new_NH < 0:  #TODO remove? (this should not happen)
                 os.remove(outbam)
                 raise Exception("NH tag cannot be negative")
 
@@ -171,16 +152,15 @@ def filter_alignments_from_bam(ref_fa, bam, scoring, read_length, k, w, m, outba
     return spurious_introns, removed_reads
 
 
-
     
 
 if __name__ == '__main__':
     import time
-    scoring=[2,4,4,2,24,1,1]
+    scoring=[3,3,4,2,24,1,1]
     
-    k = 7
-    w = 7
-    m = 22
+    k = 15
+    w = 10
+    m = 15
     
     start = time.time()
     bam = "tests/data/ERR188044_chrX.bam"
