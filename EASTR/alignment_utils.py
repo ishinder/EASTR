@@ -56,7 +56,15 @@ def get_alignment(chrom, jstart, jend, o5, o3, ref_fa, max_length,
                  read_length, scoring,  k, w, m):
     hits = []
     Overhang = namedtuple("Overhang","rstart rend qstart qend")
-    
+
+    if jend - jstart < read_length:
+        read_length=jend - jstart
+        if o3 > read_length:
+            o3 = read_length
+        if o5 > read_length:
+            o5 = read_length
+
+
     #o5
     rstart = max(jstart - o5, 0)
     rend = jstart + (read_length -  o5)
