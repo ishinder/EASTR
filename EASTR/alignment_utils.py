@@ -57,12 +57,12 @@ def get_alignment(chrom, jstart, jend, o5, o3, ref_fa, max_length,
     hits = []
     Overhang = namedtuple("Overhang","rstart rend qstart qend")
 
-    if jend - jstart < read_length:
-        read_length = jend - jstart
-        if o3 > read_length:
-            o3 = read_length
-        if o5 > read_length:
-            o5 = read_length
+    # if jend - jstart < read_length:
+    #     read_length = jend - jstart
+    #     if o3 > read_length:
+    #         o3 = read_length
+    #     if o5 > read_length:
+    #         o5 = read_length
 
 
     #o5
@@ -70,6 +70,10 @@ def get_alignment(chrom, jstart, jend, o5, o3, ref_fa, max_length,
     rend = jstart + (read_length -  o5)
     qstart = jend - o5
     qend = min(jend + (read_length -  o5), max_length)
+    if rend > qstart:
+        diff = rend - qstart
+        rstart = rstart + diff
+        qstart = qstart + diff
     o5 = Overhang(rstart, rend, qstart, qend)
     
     #o3
@@ -77,6 +81,10 @@ def get_alignment(chrom, jstart, jend, o5, o3, ref_fa, max_length,
     rend =  min(jend + o3, max_length)
     qstart = max(jstart - (read_length - o3), 0)
     qend = jstart + o3
+    if qend > rstart:
+        diff = qend - rstart
+        rend = rend - diff
+        qend = qend - diff
     o3 = Overhang(rstart, rend, qstart, qend)
 
     for o in (o5,o3): 
