@@ -55,37 +55,23 @@ def calc_alignment_score(hit,scoring,read_length):
 def get_alignment(chrom, jstart, jend, o5, o3, ref_fa, max_length,
                  read_length, scoring,  k, w, m):
     hits = []
-    Overhang = namedtuple("Overhang","rstart rend qstart qend")
+    Overhang = namedtuple("Overhang","rstart rend qstart qend oh")
 
-    # if jend - jstart < read_length:
-    #     read_length = jend - jstart
-    #     if o3 > read_length:
-    #         o3 = read_length
-    #     if o5 > read_length:
-    #         o5 = read_length
-
+    intron_len = jend - jstart
 
     #o5
     rstart = max(jstart - o5, 0)
     rend = jstart + (read_length -  o5)
     qstart = jend - o5
     qend = min(jend + (read_length -  o5), max_length)
-    if rend > qstart:
-        diff = rend - qstart
-        rstart = rstart + diff
-        qstart = qstart + diff
-    o5 = Overhang(rstart, rend, qstart, qend)
+    o5 = Overhang(rstart, rend, qstart, qend, 5)
     
     #o3
     rstart = jend - (read_length - o3)
     rend =  min(jend + o3, max_length)
     qstart = max(jstart - (read_length - o3), 0)
     qend = jstart + o3
-    if qend > rstart:
-        diff = qend - rstart
-        rend = rend - diff
-        qend = qend - diff
-    o3 = Overhang(rstart, rend, qstart, qend)
+    o3 = Overhang(rstart, rend, qstart, qend, 3)
 
     for o in (o5,o3): 
         rseq = get_seq(chrom, o.rstart, o.rend, ref_fa)
@@ -93,6 +79,15 @@ def get_alignment(chrom, jstart, jend, o5, o3, ref_fa, max_length,
         hit = align_seq_pair(rseq, qseq, scoring,k,w,m)
 
         if hit:
+            #check if the hit is in the overlap region
+            if read_length < intron_len:
+                if o.oh == 5:
+                    if hit.r_st == intron_len:
+                        hit = None
+                else:
+                    if hit.q_st == intron_len:
+                        hit = None
+
             score = calc_alignment_score(hit, scoring,read_length)
             hits.append((hit,score))
 
