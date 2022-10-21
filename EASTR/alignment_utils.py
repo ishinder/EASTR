@@ -80,16 +80,16 @@ def get_alignment(chrom, jstart, jend, o5, o3, ref_fa, max_length,
 
         if hit:
             #check if the hit is in the overlap region
-            if read_length < intron_len:
+            if read_length > intron_len:
                 if o.oh == 5:
                     if hit.r_st == intron_len:
-                        hit = None
+                        hits.append((None,-scoring[1]*read_length))
                 else:
                     if hit.q_st == intron_len:
-                        hit = None
-
-            score = calc_alignment_score(hit, scoring,read_length)
-            hits.append((hit,score))
+                        hits.append((None,-scoring[1]*read_length))
+            else:
+                score = calc_alignment_score(hit, scoring,read_length)
+                hits.append((hit,score))
 
         else:
             hits.append((None,-scoring[1]*read_length))
