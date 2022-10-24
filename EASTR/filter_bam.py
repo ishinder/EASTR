@@ -172,6 +172,17 @@ if __name__ == '__main__':
     end = time.time()
     print(f"took {end-start} seconds")
     
+    # bam="/ccb/salz8-2/shinder/projects/EASTR_tests/chess_brain/BAM/original/R2824_C4KHUACXX.bam"
+    # outbam = "/ccb/salz8-2/shinder/projects/EASTR_tests/chess_brain/BAM/filtered/R2824_C4KHUACXX_A3B3k15m15w10v5_filtered.bam"
+    # read_length=utils.get_read_length_from_bam(bam)
+    # ref_fa= "/ccb/salz8-2/chess-brain/ref/hg38mod_noPARs.fa"
+    # spur_introns,removed_reads = filter_alignments_from_bam(ref_fa, bam, scoring, read_length, k, w,m,outbam=outbam)
+
+    # bam="/ccb/salz8-2/shinder/projects/EASTR_tests/GTEx2/BAM/original/GTEX-11H98-0011-R11b-SM-5NQ6U.sorted.bam"
+    # read_length = utils.get_read_length_from_bam(bam)
+    # ref_fa= "/ccb/salz8-2/chess-brain/ref/hg38mod_noPARs.fa"
+    # outbam = "/ccb/salz8-2/shinder/projects/EASTR_tests/GTEx2/BAM/filtered/GTEX-11H98-0011-R11b-SM-5NQ6U_A3B3k15m15w10v5_filtered.bam"
+
     # start = time.time()
     # bam = "/ccb/salz8-2/shinder/projects/Geuvadis/BAM/ERR188025.bam"
     # outbam = "/ccb/salz8-2/shinder/projects/Geuvadis/EASTR2/BAM/ERR188025_filtered.bam"

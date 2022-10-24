@@ -79,19 +79,20 @@ def get_alignment(chrom, jstart, jend, o5, o3, ref_fa, max_length,
         hit = align_seq_pair(rseq, qseq, scoring,k,w,m)
 
         if hit:
+            score = calc_alignment_score(hit, scoring, read_length) 
             #check if the hit is in the overlap region
             if read_length > intron_len:
                 if o.oh == 5:
                     if hit.r_st == intron_len:
-                        hits.append((None,-scoring[1]*read_length))
+                        hit = None
+                        score = -scoring[1] * read_length
                 else:
                     if hit.q_st == intron_len:
-                        hits.append((None,-scoring[1]*read_length))
-            else:
-                score = calc_alignment_score(hit, scoring,read_length)
-                hits.append((hit,score))
+                        hit = None
+                        score = -scoring[1] * read_length
+                
+            hits.append((hit,score))
 
         else:
-            hits.append((None,-scoring[1]*read_length))
-        
+            hits.append((None,-scoring[1] * read_length))
     return hits
