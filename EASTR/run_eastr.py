@@ -51,7 +51,7 @@ def parse_args():
     parser.add_argument(
         "-k",
         help="kmer length for alignment, default=7",
-        default=15,
+        default=1,
         type=int
     )
 
@@ -65,7 +65,7 @@ def parse_args():
     parser.add_argument(
         "-w",
         help="minimizer window size, default=7",
-        default=10, 
+        default=1, 
         type=int
     )
 
