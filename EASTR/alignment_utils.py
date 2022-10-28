@@ -11,7 +11,7 @@ def get_seq(chrom,start,end,ref_fa):
 
 def align_seq_pair(rseq,qseq,scoring,k,w,m):
     #TODO ambiguous bases not working
-    a = mp.Aligner(seq=rseq,k=7,w=7,best_n=1,scoring=scoring,min_chain_score=m)
+    a = mp.Aligner(seq=rseq,k=k,w=w,best_n=1,scoring=scoring,min_chain_score=m)
     itr = list(a.map(qseq,MD=True,cs=True))
     
     if not itr:
