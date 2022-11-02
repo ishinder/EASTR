@@ -1,6 +1,7 @@
 from subprocess import run
 import os
 import shlex
+from xml.sax.handler import feature_namespaces
 import pysam
 from posixpath import dirname
 import collections
@@ -34,4 +35,13 @@ def get_chroms_list_from_bam(bam):
     chrom_sizes = collections.defaultdict(int)
     for chrom in chroms:
         chrom_sizes[chrom] = samfile.get_reference_length(chrom)
+    return chrom_sizes
+
+
+def get_chroms_list_from_fasta(ref_fa):
+    fasta=pysam.FastaFile(ref_fa)
+    chroms = list(fasta.references)
+    chrom_sizes = collections.defaultdict(int)
+    for chrom in chroms:
+        chrom_sizes[chrom] = fasta.get_reference_length(chrom)
     return chrom_sizes

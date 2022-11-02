@@ -29,6 +29,10 @@ def align_seq_pair(rseq,qseq,scoring,k,w,m):
             return hit #returns the first primary hit
 
 def calc_alignment_score(hit,scoring,read_length):
+    if hit is None:
+        score = -scoring[1] * read_length
+        return score
+
     #TODO verify AS/alignment store calc
     matches = hit.mlen
     gap_penalty = 0
