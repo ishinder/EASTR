@@ -6,13 +6,28 @@ import pysam
 from posixpath import dirname
 import collections
 
+def check_cram_bam(bam_path):
+    if bam_path.split('.')[-1]=="bam":
+        return 'bam'
+    if bam_path.split('.')[-1]=="cram":
+        return 'cram'
+    else:
+        raise Exception("Input must be a cram or a bam file")
+    
+
 def index_fasta(ref_fa):
     if not os.path.exists(f"{ref_fa}.fai"):
         pysam.faidx(ref_fa)
 
-def index_bam(bam):
-    if not os.path.exists(f"{bam}.bai"):
-        pysam.index(bam)
+def index_bam(bam_path):
+    if check_cram_bam(bam_path) == 'bam':
+        if not os.path.exists(bam_path + ".bai"):
+            pysam.index(bam_path)
+
+    else :
+        if not os.path.exists(bam_path + ".crai"):
+            pysam.index(bam_path)
+
 
 def get_read_length_from_bam(bam):
     read_lengths = []
@@ -24,10 +39,8 @@ def get_read_length_from_bam(bam):
 
 #Make a new directory
 def make_dir(path):
-    directory = dirname(path)
-    isExist = os.path.exists(directory)   
-    if not isExist:
-        os.makedirs(directory)
+    directory = os.path.join(path)
+    os.makedirs(directory,exist_ok=True)
 
 def get_chroms_list_from_bam(bam):
     samfile = pysam.AlignmentFile(bam, "rb")

@@ -1,19 +1,27 @@
+import shlex
+import subprocess
 import pysam
 import mappy as mp
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 import re
+import multiprocessing
+from itertools import repeat
+import tempfile
+import os
 
-def get_seq(chrom,start,end,ref_fa):
-    fasta = pysam.FastaFile(ref_fa)
-    seq = fasta.fetch(region=chrom,start=start,end=end)
+def get_seq(chrom,start,end,pysam_fa):
+    seq = pysam_fa.fetch(region=chrom,start=start,end=end)
     return seq
 
 
-def align_seq_pair(rseq,qseq,scoring,k,w,m):
+def align_seq_pair(rseq,qseq,scoring,k,w,m,best_n=1):
     #TODO ambiguous bases not working
-    a = mp.Aligner(seq=rseq,k=k,w=w,best_n=1,scoring=scoring,min_chain_score=m)
+    a = mp.Aligner(seq=rseq,k=k,w=w,best_n=best_n,scoring=scoring,min_chain_score=m)
     itr = list(a.map(qseq,MD=True,cs=True))
     
+    if best_n > 1:
+        return itr
+
     if not itr:
         return
     
@@ -28,10 +36,9 @@ def align_seq_pair(rseq,qseq,scoring,k,w,m):
         else:
             return hit #returns the first primary hit
 
-def calc_alignment_score(hit,scoring,read_length):
+def calc_alignment_score(hit,scoring):
     if hit is None:
-        score = -scoring[1] * read_length
-        return score
+        return None
 
     #TODO verify AS/alignment store calc
     matches = hit.mlen
@@ -56,47 +63,87 @@ def calc_alignment_score(hit,scoring,read_length):
 
     return AS
 
-def get_alignment(chrom, jstart, jend, o5, o3, ref_fa, max_length,
-                 read_length, scoring,  k, w, m):
-    hits = []
-    Overhang = namedtuple("Overhang","rstart rend qstart qend oh")
+def get_alignment(chrom, jstart, jend, overhang, pysam_fa, max_length, scoring,  k, w, m):
+    
 
     intron_len = jend - jstart
 
-    #o5
-    rstart = max(jstart - o5, 0)
-    rend = jstart + (read_length -  o5)
-    qstart = jend - o5
-    qend = min(jend + (read_length -  o5), max_length)
-    o5 = Overhang(rstart, rend, qstart, qend, 5)
+    rstart = max(jstart - overhang, 0)
+    rend = min(jstart + overhang, max_length)
+    qstart = max(jend - overhang, 0)
+    qend = min(jend + overhang, max_length)
+
+    rseq = get_seq(chrom, rstart, rend, pysam_fa)
+    qseq = get_seq(chrom, qstart, qend, pysam_fa )
+    hit = align_seq_pair(rseq, qseq, scoring,k,w,m)
+
+    if hit: 
+        #check if the alignment is in the overlap region of short introns
+        if overhang * 2 >= intron_len:
+
+            if hit.r_st == intron_len:
+                return None
+
+            if overhang > intron_len:
+                if hit.r_st - hit.q_st == intron_len:
+                    return None
+
+            if hit.r_st >= overhang and hit.q_en <= overhang:
+                return None
+            
+    return hit
+
+
+# def get_self_alignment(chrom, start, end, max_length, scoring, k, w, m, pysam_fa,  overhang):
+#     rseq,qseq,hit = get_alignment(chrom, start, end, overhang, pysam_fa, max_length, scoring,  k, w, m)
+#     return rseq,qseq,hit
+
+
+def get_flanking_subsequences(introns,chrom_sizes,overhang,ref_fa):
+    tmp_regions = tempfile.NamedTemporaryFile(mode='a',dir=os.getcwd(),delete=False)
+    tmp_fa = tempfile.NamedTemporaryFile(dir=os.getcwd(),delete=False)
+
+    seen = set()
+    for key in introns:
+        chrom = key[0]
+        jstart = (key[1])
+        jend = key[2]
+        max_length = chrom_sizes[chrom]
+        rstart = max(jstart - overhang + 1, 1) #1 based
+        rend = min(jstart + overhang, max_length)
+        qstart = max(jend - overhang + 1, 1) #1 based
+        qend = min(jend + overhang, max_length)
+        r1 = f'{chrom}:{rstart}-{rend}'
+        r2 = f'{chrom}:{qstart}-{qend}'
+        introns[key]['jstart'] = r1
+        introns[key]['jend'] = r2
+
+        for r in [r1,r2]:
+            if r not in seen:
+                t=tmp_regions.write(f'{r}\n')
+                seen.add(r)
     
-    #o3
-    rstart = jend - (read_length - o3)
-    rend =  min(jend + o3, max_length)
-    qstart = max(jstart - (read_length - o3), 0)
-    qend = jstart + o3
-    o3 = Overhang(rstart, rend, qstart, qend, 3)
 
-    for o in (o5,o3): 
-        rseq = get_seq(chrom, o.rstart, o.rend, ref_fa)
-        qseq = get_seq(chrom, o.qstart, o.qend, ref_fa)
-        hit = align_seq_pair(rseq, qseq, scoring,k,w,m)
+    tmp_regions.close()
+    tmp_fa.close()
 
-        if hit:
-            score = calc_alignment_score(hit, scoring, read_length) 
-            #check if the hit is in the overlap region
-            if read_length > intron_len:
-                if o.oh == 5:
-                    if hit.r_st == intron_len:
-                        hit = None
-                        score = -scoring[1] * read_length
-                else:
-                    if hit.q_st == intron_len:
-                        hit = None
-                        score = -scoring[1] * read_length
-                
-            hits.append((hit,score))
+    cmd1 = f"samtools faidx {ref_fa} -r {tmp_regions.name} -o {tmp_fa.name}"
+    p1 = subprocess.run(shlex.split(cmd1))
 
-        else:
-            hits.append((None,-scoring[1] * read_length))
-    return hits
+    
+    seqs = {}
+    with open(tmp_fa.name,'r') as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith(">"):
+                seq_name = line[1:]
+                if seq_name not in seqs:
+                    seqs[seq_name] = ''
+                continue
+            sequence = line
+            seqs[seq_name]=seqs[seq_name] + sequence
+    
+    os.unlink(tmp_regions.name)
+    os.unlink(tmp_fa.name)
+
+    return seqs
