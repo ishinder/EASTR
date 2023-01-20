@@ -157,8 +157,9 @@ cython_debug/
 *.code-workspace
 
 #testing
-tests/output/
-tests/other
+EASTR/test*/
+
+EASTR/tests/output/chrX_data
 
 #misc
 delete/

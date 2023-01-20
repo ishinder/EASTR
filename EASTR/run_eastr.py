@@ -1,97 +1,156 @@
 import argparse
-from EASTR import utils, filter_bam
+from collections import defaultdict
+import csv
+import multiprocessing
+import os
+from EASTR import extract_junctions, utils, filter_bam, get_spurious_introns
 from io import StringIO
 from posixpath import basename
 import pandas as pd
-
 from EASTR import filter_bam
+from itertools import repeat
+import pandas as pd
+import re
 
-def parse_args():
+def parse_args(arglist):
     parser = argparse.ArgumentParser(
         prog="EASTR",
-        description="Emend alignments of spuriously spliced transcript reads"
+        description="Emending alignments of spuriously spliced transcript reads"
     )
 
     #required args
+    group_reqd = parser.add_mutually_exclusive_group(required=True)
+    group_reqd.add_argument('--gtf', help='Input GTF file to identify potentially spurious introns')
+    group_reqd.add_argument('--bed', help='Input BED file with intron coodrdianted to identify potentially spurious introns')
+    group_reqd.add_argument('--bam', help='Input BAM file to identify potentially spurious spliced alignments')
+
+    parser.add_argument("-r", "--reference", required=True, help="reference fasta genome used in alignment")
+    parser.add_argument( '-i','--bowtie2_index', required=True, help='path to bowtie2 index')
+
+    #gtf args:
+    parser.add_argument("--trust_gtf", action='store_true')
+
+    #bt2 args:
     parser.add_argument(
-        "-R", "--reference",
-        help="reference fasta genome used in alignment", required=True)
+        "--bt2_k",
+        help="minimum number of distinct alignments found by bowtie such that a given junction may be \
+        considered spurious",
+        default=10,
+        type=int
+    )
+    #EASTR args
+    parser.add_argument(
+        "-o",
+        help="overhang on either side of the splice junction, default = 50",
+        default=50,
+        type=int)
+
+    parser.add_argument(
+        "-a",
+        help="minimum required anchor length in each of the two exons, default = 7",
+        default=7,
+        type=int
+    )
+
+    parser.add_argument(
+        "--min_junc_score_global", 
+        help=" minimum number of supporting spliced reads required per junction. \
+        Any self-aligning junction with less than the minimum number of supporting reads per all samples is filtered",
+        default=1,
+        type=int)
+
+    parser.add_argument(
+        "--min_junc_score_local", 
+        help=" minimum number of supporting reads required per junction. \
+        Any self-aligning junction with less than the minimum number of supporting reads per sample is filtered",
+        default=1,
+        type=int)
+
+    parser.add_argument(
+        "--trusted_gtf", 
+        help="GTF file path with trusted junctions (will not be filtered)")
     
-    parser.add_argument(
-        "-bam",required=True,
-        help="Input BAM file to emend alignments")
+
 
     #minimap2 args
-    parser.add_argument(
+    group_mm2 = parser.add_argument_group('Minimap2 parameters')
+
+    group_mm2.add_argument(
         "-A",
         help="Matching score, default = 3",
         default=3,
         type=int)
 
-    parser.add_argument(
+    group_mm2.add_argument(
         "-B",
-        help="Mismatching penalty, default = 3",
-        default=3,
+        help="Mismatching penalty, default = 4",
+        default=4,
         type=int)
 
-    parser.add_argument(
+    group_mm2.add_argument(
         "-O",
         nargs=2,
         type=int,
-        help="Gap open penalty, default = [4, 24]",
-        default=[4,24])
+        help="Gap open penalty, default = [12, 32]",
+        default=[12,32])
     
-    parser.add_argument(
+    group_mm2.add_argument(
         "-E",
         nargs=2,
         type=int,
         help="Gap extension penalty, default = [2, 1]. A gap of length k costs min(O1+k*E1, O2+k*E2).",
         default=[2,1])
 
-    parser.add_argument(
+    group_mm2.add_argument(
         "-k",
-        help="kmer length for alignment, default=7",
-        default=1,
+        help="kmer length for alignment, default=3",
+        default=3,
         type=int
     )
 
-    parser.add_argument(
+    group_mm2.add_argument(
         "--scoreN",
         help="Score of a mismatch involving ambiguous bases, default=1",
         default=1,
         type=int
     )
 
-    parser.add_argument(
+    group_mm2.add_argument(
         "-w",
-        help="minimizer window size, default=7",
-        default=1, 
+        help="minimizer window size, default=2",
+        default=2, 
         type=int
     )
 
-    parser.add_argument(
+    group_mm2.add_argument(
         "-m",
-        help="Discard chains with chaining score <INT [14].",
-        default=15, 
+        help="Discard chains with chaining score, default=25.",
+        default=25, 
         type=int
     )
 
     #output args
-    parser.add_argument("--out_introns", default='stdout',metavar='FILE',
-                        help="write introns to FILE; the default output is to terminal")
+    group_out = parser.add_argument_group('Output')
 
-    parser.add_argument("--out_bam", metavar='FILE',
-                        help="write filtered bam to FILE")
+    group_out.add_argument("--out_introns", default='stdout',metavar='FILE',
+                        help="write spurious introns to FILE; the default output is to terminal")
+
+    group_out.add_argument("--out_dir", metavar='DIRECTORY',
+                        help="write filtered bams and removed reads to DIRECTORY")
+
+    group_out.add_argument("--suffix", metavar='STR',default="_filtered",
+                        help="suffix added to output BAM files, default='.suffix'")
+
 
     #other args
     parser.add_argument(
         "-p",
         help="Number of parallel processes, default=1",
-        default=1
+        default=1,
+        type=int
     )
 
-    parser.add_argument("--removed_reads", metavar='FILE',
-                        help="write filtered bam to FILE")
+
 
     return parser.parse_args()
 
@@ -113,45 +172,94 @@ def minimap_scoring(args):
     
     return scoring
 
-def main():
-    args = parse_args()
-    # p = args.p
+#def write_removed_reads(outfile, removed_reads):
+
+
+def main(arglist=None):
+    args = parse_args(arglist)
+    
+    #set values
     scoring = minimap_scoring(args)
+    k = args.k
+    w = args.w
+    m = args.m
+    overhang = args.o
+    min_junc_score_global = args.min_junc_score_global
+    min_junc_score_local = args.min_junc_score_local
+    anchor = args.a
+    p = args.p
     ref_fa = args.reference
-    bam = args.bam
+    bt2_index = args.bowtie2_index
+    bt2_k = args.bt2_k
+    suffix = args.suffix
 
-    utils.index_bam(bam)
+    is_bam = False
+    trusted_introns = args.trusted_gtf
+    bam_list = args.bam
+    gtf_path = args.gtf
+    bed_path = args.bed
+
     utils.index_fasta(ref_fa)
-    
-    read_length = utils.get_read_length_from_bam(bam)
 
-    # introns = get_spurious_introns.run_junctions(bam, scoring, ref_fa, 
-    #                                              read_length, args.k, args.w)
+    if bam_list is not None:
+        is_bam = True
+
+        #if a single bam file is provided
+        if bam_list.split('.')[-1] in ['bam','cram']:
+            bam_list = [bam_list]
+        
+        #if a file containing a list of bam files is provided
+        else:
+            with open(bam_list) as file:
+                bam_list = [line.rstrip() for line in file]
+                
+        pool = multiprocessing.Pool(p)
+        d = pool.map(utils.index_bam,bam_list)
     
-    # filter_bam.filter_alignments(introns, ref_fa, bam, args.o)
     
-    spurious_introns, removed_reads = filter_bam.filter_alignments_from_bam(
-            ref_fa, bam, scoring, read_length, args.k, args.w, args.m, outbam=args.out_bam)
+    spurious = get_spurious_introns.get_spurious_junctions(scoring, k, w, m, overhang, bt2_index, bt2_k,
+                                    ref_fa, p, anchor, min_junc_score_global, min_junc_score_local, bam_list=bam_list, 
+                                    gtf_path=gtf_path, trusted_introns=trusted_introns)
+
     
-    df = pd.Series(spurious_introns).reset_index()
-    
+    print(args.out_introns)
     if args.out_introns == "stdout":
-        out_introns = StringIO()
+            out_introns = StringIO()
           
     else:
-        out_introns=args.out_introns
+        out_introns = args.out_introns
+        path = os.path.dirname(out_introns)
+        if path != '':
+            utils.make_dir(os.path.dirname(out_introns))
 
-    df.to_csv(out_introns,header=False,index=False, sep='\t')
+    df = get_spurious_introns.spurious_junctions_to_bed(spurious, out_introns, is_bam = is_bam, scoring=scoring)
 
-    if args.removed_reads is not None:
-        df = pd.DataFrame(removed_reads, columns=['qname','is_read1'])
-        df['read'] = 2
-        df.loc[df['is_read1'],'read'] = 1
-        df[['qname','read']].to_csv(args.removed_reads,index=False)
+    if bam_list:
 
+        if args.out_dir:
+            out_dir = args.out_dir
+            utils.make_dir(out_dir)
+            outbams = [os.path.join(out_dir, re.split(r'.[bcr]+am',basename(i))[0] + f'{suffix}.bam') for i in bam_list]
 
-    #TODO: do not make filtered bam
-    #TODO: get spur introns only
+            pool = multiprocessing.Pool(p)
+            removed_reads = pool.starmap(filter_bam.write_filtered_bam, zip(bam_list,outbams,repeat(set(spurious))))
+            pool.close()
+
+            for i, rr in enumerate(removed_reads):
+                out_removed_reads = os.path.join(out_dir, re.split(r'.[bcr]+am',basename(bam_list[i]))[0] + '.removed_reads.lst')
+                pd.DataFrame(rr).to_csv(out_removed_reads, index=False,header=False,sep='\t')
+
+            for i, bam in enumerate(bam_list):
+                sample_id = re.split(r'.[bcr]+am',basename(bam))[0]
+                
+                #write removed_reads
+                out_removed_reads = os.path.join(out_dir, sample_id + '.removed_reads.lst')
+                pd.DataFrame(removed_reads[i]).to_csv(out_removed_reads, index=False, header=False, sep='\t')
+                
+                #write bed file of spurious junctions
+                df_sample = df[df['samples'].str.contains(sample_id)].iloc[:,:-1]
+                out_spur_juncs = os.path.join(out_dir, sample_id + '.spurious_junctions.bed')
+                df_sample.to_csv(out_spur_juncs, header=False, index=False, sep='\t')
 
 if __name__ == '__main__':
     main()
