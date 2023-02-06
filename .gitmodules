@@ -1,0 +1,3 @@
+[submodule "vacuum/include/gclib"]
+	path = vacuum/include/gclib
+	url = https://github.com/gpertea/gclib.git
