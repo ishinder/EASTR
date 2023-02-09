@@ -1,0 +1,8 @@
+include/
+CMakeCache.txt
+CMakeFiles
+Makefile
+vacuum
+cmake-build-debug
+cmake_install.cmake
+htslib-prefix

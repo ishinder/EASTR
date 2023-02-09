@@ -1,5 +1,9 @@
-#ifndef TIEBRUSH_TMERGE_H_
-#define TIEBRUSH_TMERGE_H_
+//
+// Source: TieBrush
+//
+
+#ifndef TMERGE_H
+#define TMERGE_H
 
 #include <map>
 #include <gclib/GStr.h>
@@ -117,4 +121,4 @@ public:
 };
 
 
-#endif /* TIEBRUSH_TMERGE_H_ */
+#endif /* TMERGE_H */

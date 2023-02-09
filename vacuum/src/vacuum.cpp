@@ -159,6 +159,7 @@ int main(int argc, char *argv[]) {
     GSamRecord brec;
     auto start=std::chrono::high_resolution_clock::now();
     int spur_cnt = 0;
+    std::cout << "brrrm! identifying alignment records with spurious splice junctions" << std::endl;
     while (bamreader.next(brec)) {
         bam1_t* in_rec = brec.get_b();
         // check if current record is unaligned;
@@ -214,7 +215,7 @@ int main(int argc, char *argv[]) {
             kept_brecs.Add(newpbr);
         }
     }
-    std::cout << "flush!" << std::endl;
+    std::cout << "vacuuming completed. writing only clean bam records to the output file." << std::endl;
     flushBrec(kept_brecs);
     bamreader.bclose();
     delete outfile;

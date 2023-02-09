@@ -1,3 +1,7 @@
+//
+// Source: TieBrush
+//
+
 #include "tmerge.h"
 #include <string>
 #include <sstream>

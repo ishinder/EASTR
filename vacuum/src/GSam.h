@@ -1,5 +1,5 @@
-#ifndef _G_SAM_H
-#define _G_SAM_H
+#ifndef G_SAM_H
+#define G_SAM_H
 
 #include <assert.h>
 #include <string>
