@@ -21,7 +21,7 @@ def parse_args(arglist):
     #required args
     group_reqd = parser.add_mutually_exclusive_group(required=True)
     group_reqd.add_argument('--gtf', help='Input GTF file to identify potentially spurious introns')
-    group_reqd.add_argument('--bed', help='Input BED file with intron coodrdianted to identify potentially spurious introns')
+    group_reqd.add_argument('--bed', help='Input BED file with intron coodrdiantes to identify potentially spurious introns')
     group_reqd.add_argument('--bam', help='Input BAM file to identify potentially spurious spliced alignments')
 
     parser.add_argument("-r", "--reference", required=True, help="reference fasta genome used in alignment")
@@ -33,7 +33,7 @@ def parse_args(arglist):
     #bt2 args:
     parser.add_argument(
         "--bt2_k",
-        help="minimum number of distinct alignments found by bowtie such that a given junction may be \
+        help="minimum number of distinct alignments found by bowtie2 such that a given junction may be \
         considered spurious",
         default=10,
         type=int
