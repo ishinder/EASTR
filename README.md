@@ -22,7 +22,7 @@ EASTR can be applied to any RNA-seq dataset regardless of the alignment software
 	```bash
 	# (OPTIONAL) Install in a Python virtual environment
 	# python3 -m virtualenv venv # (OPTIONAL)
-	# source ./venv/bin/activate # (OPTIONAL)
+	# source .venv/bin/activate # (OPTIONAL)
 	make install # Install EASTR package
 	```
 
