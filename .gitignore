@@ -157,7 +157,10 @@ cython_debug/
 *.code-workspace
 
 #testing
+tests/
 EASTR/test*/
+tmp/
+tmp*
 
 EASTR/tests/output/chrX_data
 
