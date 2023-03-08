@@ -1,17 +1,10 @@
-from collections import defaultdict, namedtuple
-import collections
+from collections import defaultdict
 import multiprocessing
-import pickle
-from posixpath import basename
-import tempfile
 import pandas as pd
 import os
 import subprocess
-import pysam
 import shlex
-from io import StringIO
 from EASTR import utils
-
 
 
 def get_junctions_from_bed(bed_path:str) -> dict:
@@ -27,6 +20,25 @@ def get_junctions_from_bed(bed_path:str) -> dict:
                 raise Exception("Start of region can not be greater than end of region for:\n",line)
             junctions[(chrom, start, end, strand)] = (name, score)
     return junctions
+
+def get_junctions_multi_bed(bed_list:list, p) -> dict:
+    pool = multiprocessing.Pool(p)
+    results = pool.map(get_junctions_from_bed, bed_list)
+    pool.close
+
+    dd = defaultdict(dict)
+    for (i,d) in enumerate(results):
+        name2 = os.path.splitext(os.path.basename(bed_list[i]))[0]
+        for key, (name, score) in d.items():
+            if key not in dd:
+                dd[key]['samples']= set()
+                dd[key]['samples'].add((name, name2, score))
+                dd[key]['score'] = score
+            else:
+                dd[key]['samples'].add((name, name2, score))
+                dd[key]['score'] = dd[key]['score'] + score
+
+    return dd
 
 def junction_extractor(bam_path:str, out_path:str) -> dict:
     name = os.path.splitext(os.path.basename(bam_path))[0]
@@ -96,23 +108,25 @@ def extract_splice_sites_gtf(gtf_path:str) -> dict:
             raise Exception("Exon does not contain transcript ID\n")
 
         transcript_id = values_dict['transcript_id']
+        gene_id = values_dict['gene_id']
+
         if transcript_id not in trans:
-            trans[transcript_id] = [chrom, strand, [[start, end]]]
+            trans[transcript_id] = [chrom, strand, gene_id, [[start, end]]]
         else:
-            trans[transcript_id][2].append([start, end])
+            trans[transcript_id][3].append([start, end])
 
 
-    for tran, [chrom, strand, exons] in trans.items():
+    for tran, [chrom, strand, gene_id, exons] in trans.items():
             exons.sort()
 
 
     junctions = defaultdict(dict)
-    for tran, (chrom, strand, exons) in trans.items():
+    for tran, (chrom, strand, gene_id, exons) in trans.items():
         for i in range(1, len(exons)):
             if 'transcripts' not in junctions[(chrom, exons[i-1][1], exons[i][0]-1, strand)]:
-                junctions[(chrom, exons[i-1][1], exons[i][0]-1, strand)]['transcripts'] = [tran]
+                junctions[(chrom, exons[i-1][1], exons[i][0]-1, strand)]['transcripts'] = [gene_id, [tran]]
             else:
-                junctions[(chrom, exons[i-1][1], exons[i][0]-1, strand)]['transcripts'].append(tran) #intron bed coordinates
+                junctions[(chrom, exons[i-1][1], exons[i][0]-1, strand)]['transcripts'][1].append(tran) #intron bed coordinates
     
     return junctions
 

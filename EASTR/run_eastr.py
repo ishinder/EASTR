@@ -5,84 +5,14 @@ from ctypes import Union
 import multiprocessing
 import os
 import sys
-from EASTR import extract_junctions, utils, filter_bam, get_spurious_introns, alignment_utils
+from EASTR import extract_junctions, output_utils, utils, get_spurious_introns, alignment_utils, output_utils
 from io import StringIO
 from posixpath import basename
 import pandas as pd
-from EASTR import filter_bam
 from itertools import repeat
 import pandas as pd
 import re
 from typing import List, Union
-
-def out_junctions_filelist(bam_list:list, out_junctions, suffix="") -> Union[List[str], None]:
-
-    if out_junctions is None:
-        return
-
-    if len(bam_list) == 1:
-        if os.path.splitext(out_junctions)[1] != '.bed':
-            out_junctions = out_junctions + '.bed'
-        path = os.path.dirname(out_junctions)
-        utils.make_dir(path)
-        out_junctions_filelist = [out_junctions]
-
-    else:
-        if utils.check_directory_or_file(out_junctions) == 'file':
-            print("ERROR: the path provided for the output file is a file, not a directory")
-            sys.exit(1)
-        utils.make_dir(out_junctions)
-        out_junctions_filelist = []
-        for bam in bam_list:
-            out_junctions_filelist.append(out_junctions + "/" + os.path.splitext(os.path.basename(bam))[0] + suffix + ".bed")
-
-    return out_junctions_filelist
-
-
-def write_spurious_dict_to_all_stdout(spurious_dict, scoring):
-    sorted_keys = spurious_dict.keys()
-    named_keys = {}
-    for i, key in enumerate(sorted_keys):
-        name = "JUNC{}".format(i+1)
-        named_keys[key] = name
-    out = StringIO()    
-    writer = csv.writer(out, delimiter='\t')
-    for key, value in spurious_dict.items():
-            chrom , start, end, strand = key
-            name = named_keys[key]
-            score = value['score']
-            samples = value['samples']
-            score2 = alignment_utils.calc_alignment_score(value['hit'],scoring)
-            name2 = ';'.join([f"{score2},{sample_id}" for score2, sample_id in samples])
-            writer.writerow([chrom, start, end, name, score, strand, score2, name2])
-    print(out.getvalue())
-
-
-def write_spurious_dict_to_sample_bed(spurious_dict, bam_list, out_removed_junctions_filelist, scoring):
-    sorted_keys = spurious_dict.keys()
-    named_keys = {}
-    for i, key in enumerate(sorted_keys):
-        name = "JUNC{}".format(i+1)
-        named_keys[key] = name
-
-    sample_names = [os.path.splitext(os.path.basename(bam_path))[0] for bam_path in bam_list]
-
-    out_io_dict = {}
-    for i,sample in enumerate(sample_names):
-        out_io_dict[sample] = [StringIO(), out_removed_junctions_filelist[i]]
-
-    for key, value in spurious_dict.items():
-        name = named_keys[key]
-        samples = value['samples']
-        score2 = alignment_utils.calc_alignment_score(value['hit'],scoring)
-        for i, sample in enumerate(samples):
-            score, sample_id = sample
-            out_io_dict[sample_id][0].write(f"{key[0]}\t{key[1]}\t{key[2]}\t{name}\t{score}\t{key[3]}\t{score2}")
-
-    for (out,filepath) in out_io_dict.values():
-        with open(filepath, 'w') as out_removed_junctions:
-            out_removed_junctions.write(out.getvalue())
-        
 
 
 def parse_args(arglist):
@@ -99,8 +29,6 @@ def parse_args(arglist):
     parser.add_argument("-r", "--reference", required=True, help="reference fasta genome used in alignment")
     parser.add_argument('-i','--bowtie2_index', required=True, help='path to bowtie2 index')
 
-    #gtf args:
-    parser.add_argument("--trust_gtf", action='store_true')
 
     #bt2 args:
     parser.add_argument(
@@ -200,10 +128,10 @@ def parse_args(arglist):
     group_out.add_argument("--out_original_junctions", default=None, metavar='OUT',
                         help="write original junctions to OUT file or directory")
     
-    group_out.add_argument("--out_removed_junctions", default='stdout', metavar='FILE',
+    group_out.add_argument("--out_removed_junctions", default='stdout', metavar='OUT',
                         help="write removed junctions to OUT file or directory; the default output is to terminal")
 
-    group_out.add_argument("--out_filtered_bam", metavar='OUT',
+    group_out.add_argument("--out_filtered_bam", metavar='OUT',default=None,
                         help="write filtered bams to OUT file or directory")
 
     group_out.add_argument("--filtered_bam_suffix", metavar='STR',default="_EASTR_filtered",
@@ -249,7 +177,7 @@ def main(arglist=None):
     #required input args
     bam_list = args.bam
     gtf_path = args.gtf
-    bed_path = args.bed
+    bed_list = args.bed
     ref_fa = args.reference
     bt2_index = args.bowtie2_index
     bt2_k = args.bt2_k
@@ -289,56 +217,60 @@ def main(arglist=None):
         if extension in ['.bam','.cram','.sam']:
             bam_list = [bam_list]
         
-        #if a file containing a list of bam files is provided
         else:
             with open(bam_list) as file:
                 bam_list = [line.rstrip() for line in file]
-                
+                for bam in bam_list:
+                    if not os.path.isfile(bam):
+                        raise ValueError('input must be a bam file or a file containing a list of bam files')
+                        sys.exit(1)
+            
 
-    out_original_junctions_filelist = out_junctions_filelist(bam_list, out_original_junctions, suffix=suffix)
-    out_removed_junctions_filelist = out_junctions_filelist(bam_list, out_removed_junctions, suffix=suffix)
+    elif bed_list:
+        extension = os.path.splitext(os.path.basename(bed_list))[1]
+        if extension in ['.bed']:
+            bed_list = [bed_list]
+        
+        else:
+            with open(bed_list) as file:
+                bed_list = [line.rstrip() for line in file]
+                for bed in bed_list:
+                    if not os.path.isfile(bed):
+                        raise ValueError('input must be a bed file or a file containing a list of bed files')
+                        sys.exit(1)
+        
+
+    original_junctions_filelist = output_utils.out_junctions_filelist(bam_list, gtf_path, bed_list, out_original_junctions, suffix="_original_junctions")
+    removed_junctions_filelist = output_utils.out_junctions_filelist(bam_list, gtf_path, bed_list, out_removed_junctions, suffix="_removed_junctions")
+    filtered_bam_filelist = output_utils.out_filtered_bam_filelist(bam_list, out_filtered_bam, suffix=suffix)
     
     spurious_dict = get_spurious_introns.get_spurious_junctions(scoring, k, w, m, overhang, bt2_index, bt2_k,
                                     ref_fa, p, anchor, min_junc_score, bam_list, gtf_path,
-                                    bed_path, trusted_bed, out_original_junctions_filelist )
+                                    bed_list, trusted_bed, original_junctions_filelist )
+    
 
+    if is_bam:
+        if filtered_bam_filelist:
+            sample_to_bed = output_utils.spurious_dict_bam_by_sample_to_bed(
+                    spurious_dict, bam_list, removed_junctions_filelist, scoring=scoring)
+            output_utils.filter_multi_bam_with_vacuum(bam_list, sample_to_bed, filtered_bam_filelist, p)
+            if removed_junctions_filelist is None:
+                for sample in sample_to_bed:
+                    os.remove(sample_to_bed[sample])
+        elif removed_junctions_filelist:
+            sample_to_bed = output_utils.spurious_dict_bam_by_sample_to_bed(spurious_dict, bam_list, removed_junctions_filelist, scoring=scoring)
 
+        else:
+            output_utils.spurious_dict_all_to_bed(spurious_dict, scoring, None, gtf_path, bed_list, bam_list)
 
-
-    if out_removed_junctions_filelist is None:
-        out_removed_junctions = StringIO()
-        #TODO
-          
-   
-
-    df = get_spurious_introns.spurious_junctions_to_bed(spurious_dict, out_removed_junctions, is_bam = is_bam, scoring=scoring)
-
-    if bam_list:
-
-        if args.out_dir:
-            out_dir = args.out_dir
-            utils.make_dir(out_dir)
-            outbams = [os.path.join(out_dir, re.split(r'.[bcr]+am',basename(i))[0] + f'{suffix}.bam') for i in bam_list]
-
-            pool = multiprocessing.Pool(p)
-            removed_reads = pool.starmap(filter_bam.write_filtered_bam, zip(bam_list,outbams,repeat(set(spurious_dict))))
-            pool.close()
-
-            for i, rr in enumerate(removed_reads):
-                out_removed_reads = os.path.join(out_dir, re.split(r'.[bcr]+am',basename(bam_list[i]))[0] + '.removed_reads.lst')
-                pd.DataFrame(rr).to_csv(out_removed_reads, index=False,header=False,sep='\t')
-
-            for i, bam in enumerate(bam_list):
-                sample_id = re.split(r'.[bcr]+am',basename(bam))[0]
-                
-                #write removed_reads
-                out_removed_reads = os.path.join(out_dir, sample_id + '.removed_reads.lst')
-                pd.DataFrame(removed_reads[i]).to_csv(out_removed_reads, index=False, header=False, sep='\t')
-                
-                #write bed file of spurious junctions
-                df_sample = df[df['samples'].str.contains(sample_id)].iloc[:,:-1]
-                out_spur_juncs = os.path.join(out_dir, sample_id + '.spurious_junctions.bed')
-                df_sample.to_csv(out_spur_juncs, header=False, index=False, sep='\t')
+    if gtf_path:
+        output_utils.spurious_dict_all_to_bed(spurious_dict, scoring, removed_junctions_filelist, gtf_path, bed_list, bam_list)
+    
+    elif bed_list:
+        if removed_junctions_filelist:
+            output_utils.spurious_dict_bed_by_sample_to_bed(spurious_dict, bed_list, removed_junctions_filelist, scoring)
+        else:
+            output_utils.spurious_dict_all_to_bed(spurious_dict, scoring, None, gtf_path, bed_list, bam_list)
 
 if __name__ == '__main__':
     main()

@@ -37,8 +37,6 @@ def get_self_aligned_introns(introns, seqs, overhang, k, w, m, scoring):
     return self_introns
 
 
-
-
 def linear_distance(string1, string2):
     if len(string1)!=len(string2):
         raise Exception("strings must be of equal length")
@@ -48,8 +46,15 @@ def linear_distance(string1, string2):
             distance += 1
     return distance
 
+def get_middle_seq(len_,seq):
+    if len(seq) > len_:
+        middle_start = (len(seq) - len_) // 2
+        middle_end = middle_start + len_
+        seq = seq[middle_start:middle_end]
+    return seq
 
-def bowtie2_align_self_introns_to_ref (introns_to_align, seqs, bt2_index, overhang, p=1, hseq_len=15, bt2_k=10):
+
+def bowtie2_align_self_introns_to_ref (introns_to_align, seqs, bt2_index, overhang, p=1, len_=15, bt2_k=10):
     bt2_k = bt2_k + 1
     tmp_sam = tempfile.NamedTemporaryFile(dir=os.getcwd(),delete=False)
     tmp_fa = tempfile.NamedTemporaryFile(mode='a',dir=os.getcwd(),delete=False)
@@ -58,9 +63,9 @@ def bowtie2_align_self_introns_to_ref (introns_to_align, seqs, bt2_index, overha
         hit = value['hit']
         rseq = seqs[value['jstart']]
         qseq = seqs[value['jend']]
-        seq1 = rseq[hit.r_st:hit.r_en]
-        seq2 = qseq[hit.q_st:hit.q_en]
-        seqh = rseq[-hseq_len:] + qseq[overhang:overhang+hseq_len]
+        seq1 = get_middle_seq(len_*2, rseq[hit.r_st:hit.r_en])
+        seq2 = get_middle_seq(len_*2, qseq[hit.q_st:hit.q_en])
+        seqh = rseq[overhang-len_:overhang] + qseq[overhang:overhang+len_]
 
         x = tmp_fa.write(f'>{read_name},seq1\n{seq1}\n' + \
                          f'>{read_name},seq2\n{seq2}\n' + \
@@ -97,29 +102,46 @@ def bowtie2_align_self_introns_to_ref (introns_to_align, seqs, bt2_index, overha
 
     return d #TODO return?
 
-
-def is_spurious_alignment(key, value, seqs, overhang, bt2_k=10, anchor=7):
-    hit = value['hit']
-
-    #check unique junction
-    if hit.q_st - hit.r_st > overhang:
-        if value['seqh'] == 0:
-            return False
-
-    #check unique alignment
-    if (value['seq1'] == 1) and (value['seq2'] == 1):
-        if value['seqh'] == 0:
-            return False
-
-    #check other conditions
+def is_complete_alignment(hit,overhang,anchor):
     c1 = (hit.r_en <= overhang + anchor)
     c2 = (hit.r_st >= overhang - anchor)
     c3 = (hit.q_en <= overhang + anchor)
     c4 = (hit.q_st >= overhang - anchor)
     c5 = (abs(hit.r_st - hit.q_st) > anchor * 2)
-
     if (c1 or c2 or c3 or c4 or c5):
+        return False
+    else:
+        return True
+
+
+def is_spurious_alignment(key, value, seqs, overhang, bt2_k=10, anchor=7):
+    is_complete = is_complete_alignment(value['hit'],overhang,anchor)
+    hit = value['hit']
+
+    if is_complete:
+        #check unique alignment
+        if (value['seq1'] == 1) or (value['seq2'] == 1):
+            if value['seqh'] == 0:
+                print("unique alignment")
+                print(key)
+                return False
+
+    
+    else:
+        #if duplicated exon:
+        if hit.q_st - hit.r_st >= overhang - anchor:
+            if value['seqh'] == 0:
+                print("duplicated exon")
+                print(key)
+                return False
+
+
         if (value['seq1'] < bt2_k ) or (value['seq2'] < bt2_k):
+            if value['seqh'] == 0:
+                print("partial alignment - no hybrid sequence found")
+                print(key)
+                return False
+
             rseq = seqs[value['jstart']]
             qseq = seqs[value['jend']]
             e5 = rseq[overhang - anchor:overhang]
@@ -129,7 +151,14 @@ def is_spurious_alignment(key, value, seqs, overhang, bt2_k=10, anchor=7):
             distance_e5i3 = linear_distance(e5, i3)
             distance_i5e3 = linear_distance(i5, e3)
             if distance_e5i3 + distance_i5e3 > 2:
+                print("partial alignment - no overhang")
+                print(key)
                 return False
+            
+            else:
+                print("partial alignment - has overhang")
+                print(key)
+                return True
 
     return True
 
@@ -146,7 +175,7 @@ def get_spurious_introns(self_introns, seqs, bt2_index, overhang, anchor=7, min_
 
         introns_to_align[k] = v
 
-    bw2_alignments = bowtie2_align_self_introns_to_ref(introns_to_align, seqs, bt2_index, overhang, p=p, hseq_len=15, bt2_k=bt2_k)
+    bw2_alignments = bowtie2_align_self_introns_to_ref(introns_to_align, seqs, bt2_index, overhang, p=p, len_=15, bt2_k=bt2_k)
 
     for k, v in introns_to_align.items():
         if is_spurious_alignment(k, v, seqs, overhang, anchor=anchor):
@@ -199,10 +228,12 @@ def get_spurious_junctions(scoring, k, w, m, overhang, bt2_index, bt2_k, ref_fa,
 
     seqs = alignment_utils.get_flanking_subsequences(introns, chrom_sizes, overhang, ref_fa)
     self_introns = get_self_aligned_introns(introns, seqs, overhang, k, w, m, scoring)
-    spurious = get_spurious_introns(self_introns, seqs, bt2_index, overhang, anchor=anchor,
+    spurious_dict = get_spurious_introns(self_introns, seqs, bt2_index, overhang, anchor=anchor,
                                      min_junc_score=min_junc_score, p=p, is_bam=is_bam, bt2_k=bt2_k)
+    spurious_dict  = dict(sorted(spurious_dict.items(), key=lambda x: (x[0][1], x[0][1], x[0][2], x[0][3])))
 
-    return spurious
+    return spurious_dict
+
 
 def spurious_junctions_to_bed(spurious, fileout, is_bam = True, write=True, **kargs):
     df = pd.Series(spurious).reset_index()
@@ -235,3 +266,78 @@ def spurious_junctions_to_bed(spurious, fileout, is_bam = True, write=True, **ka
         df.to_csv(fileout, header=False, index=False, sep='\t', quoting=csv.QUOTE_NONE)
 
     return df
+
+
+if __name__ == '__main__':
+    import time
+    import glob
+
+    scoring=[3,4,12,2,32,1,1]
+    k = 3
+    w = 2
+    m = 25
+    overhang = 50
+    bt2_k = 10
+    min_junc_score =1
+    anchor = 7
+    p = 18
+
+    ref_fa = "/ccb/salz7-data/genomes/hg38/hg38p13.fa"
+    bt2_index = '/ccb/salz8-2/shinder/bt2_hg38_noPARs_index/hg38mod_noPARs'
+    trusted_introns = None
+    gtf_path = None
+    bed_path = None
+    is_bam = False
+    out_original_junctions = None
+    trusted_bed = None
+    chrom_sizes = get_chroms_list_from_fasta(ref_fa)
+ 
+
+    #is_bam
+    is_bam = True
+    os.chdir('/ccb/salz8-2/shinder/projects/EASTR/tests/data/chrX_data')
+    bam_list = glob.glob('/ccb/salz8-2/shinder/projects/EASTR/tests/data/chrX_data/hisat2/*.bam')
+
+    seqs = alignment_utils.get_flanking_subsequences(introns, chrom_sizes, overhang, ref_fa)
+    self_introns = get_self_aligned_introns(introns, seqs, overhang, k, w, m, scoring)
+
+    #is_gtf
+    is_bam=False
+    gtf_path = '/ccb/salz2/shinder/projects/EASTR_tests/hg38_annotation_references/GCA_000001405.15_GRCh38.refseq_v110.sorted.gtf'
+    introns = extract_junctions.extract_splice_sites_gtf(gtf_path)
+    seqs = alignment_utils.get_flanking_subsequences(introns, chrom_sizes, overhang, ref_fa)
+    self_introns = get_self_aligned_introns(introns, seqs, overhang, k, w, m, scoring)
+    spurious_dict = get_spurious_introns(self_introns, seqs, bt2_index, overhang, anchor=anchor,
+                                     min_junc_score=min_junc_score, p=p, is_bam=is_bam, bt2_k=bt2_k)
+
+    k=('chr3', 191229897, 191234571, '-')
+    spurious_dict[k]['hit'].cs
+    
+    # bam_list = "/ccb/salz8-2/shinder/projects/EASTR/tests/data/chrX_data/bamlist.txt"
+    gtf_path = '/ccb/salz8-2/shinder/projects/EASTR/EASTR/tests/data/chrX_data/genes/chrX.gtf'
+
+
+
+
+    
+#     spurious = spurious_junctions_in_bam(bam_list, scoring, k, w, m, overhang, bt2_index, ref_fa, p, anchor, min_junc_score_global)
+
+#     # gtf_path = "/ccb/salz8-2/shinder/projects/EASTR/tests/data/chess3.0.gtf"
+    
+#     fileout = "/ccb/salz8-3/shinder/misc/for_KH/spurious_introns_from_n15_riboZ_CHESS_brain.bed"
+
+#     ref_fa_gtf = '' #ref
+    
+
+
+        
+#     gtf_path = "/ccb/salz1/mpertea/stringtie/paper/hg38c_protein_and_lncRNA.gtf"
+
+    
+    
+#     start = time.time()
+    
+#     end = time.time()
+
+#     bw2_alignments = bowtie2_align_self_introns_to_ref(self_introns, seqs, bt2_index, overhang, p=1, hseq_len=25)
+#     print(f'{end-start}/60 seconds')
