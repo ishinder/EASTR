@@ -63,7 +63,17 @@ def parse_args(arglist):
         "--trusted_bed", 
         help="BED file path with trusted junctions (will not be removed by EASTR)")
     
+    parser.add_argument(
+        "--verbose", default=False, action="store_true",
+        help="If filtering bam, print count of total spliced alignment and removed alignments")
+    
+    # parser.add_argument(
+    #     "--keep_temp", default=False, action="store_true",
+    #     help="Keep intermediate files")
 
+    parser.add_argument(
+        "--removed_alignments_bam", default=False, action="store_true",
+        help="Write removed alignments to a BAM file")
 
     #minimap2 args
     group_mm2 = parser.add_argument_group('Minimap2 parameters')
@@ -187,6 +197,8 @@ def main(arglist=None):
     min_junc_score = args.min_junc_score
     anchor = args.a
     trusted_bed = args.trusted_bed
+    verbose = args.verbose
+    removed_alignments_bam = args.removed_alignments_bam
     
     #mm2 variables
     scoring = minimap_scoring(args)
@@ -253,7 +265,7 @@ def main(arglist=None):
         if filtered_bam_filelist:
             sample_to_bed = output_utils.spurious_dict_bam_by_sample_to_bed(
                     spurious_dict, bam_list, removed_junctions_filelist, scoring=scoring)
-            output_utils.filter_multi_bam_with_vacuum(bam_list, sample_to_bed, filtered_bam_filelist, p)
+            output_utils.filter_multi_bam_with_vacuum(bam_list, sample_to_bed, filtered_bam_filelist, p, verbose, removed_alignments_bam)
             if removed_junctions_filelist is None:
                 for sample in sample_to_bed:
                     os.remove(sample_to_bed[sample])
