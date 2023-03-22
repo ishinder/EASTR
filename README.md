@@ -1,3 +1,7 @@
+ (\(\
+ (-.-)
+o('')('')
+
 # Emend Alignment of Spliced Transcript Reads (EASTR)
 EASTR is a software tool that finds and removes spurious spliced alignments caused by repeated sequences. 
 EASTR can be applied to any RNA-seq dataset regardless of the alignment software used.
@@ -5,7 +9,6 @@ EASTR can be applied to any RNA-seq dataset regardless of the alignment software
 <!-- TODO: Give a quick sentence or two to explain what this should do/give you. -->
 ## Required Dependencies
 
-- [RegTools](https://regtools.readthedocs.io/en/latest/)
 - [bowtie2](https://github.com/BenLangmead/bowtie2)
 - [samtools](https://github.com/samtools/samtools)
 
@@ -28,9 +31,6 @@ EASTR can be applied to any RNA-seq dataset regardless of the alignment software
 
 3. OPTIONAL: Download test data
   ```bash
-  wget ftp://ftp.ccb.jhu.edu/pub/ishinder/bt2_index.tar.gz
-  wget ftp://ftp.ccb.jhu.edu/pub/ishinder/hisat_alns.tar.gz
-  wget ftp://ftp.ccb.jhu.edu/pub/ishinder/ref_fa.gz
   wget ftp://ftp.ccb.jhu.edu/pub/ishinder/chrX.gtf
   ```
 

@@ -42,8 +42,7 @@ def get_junctions_multi_bed(bed_list:list, p) -> dict:
 
 def junction_extractor(bam_path:str, out_path:str) -> dict:
     name = os.path.splitext(os.path.basename(bam_path))[0]
-    je = utils.get_junction_extractor_path()
-    cmd = je + " -o " + out_path + " " + bam_path
+    cmd = f"junction_extractor -o {out_path} {bam_path}"
     a = subprocess.Popen(shlex.split(cmd), stdout=subprocess.DEVNULL)
     b = a.communicate() 
 

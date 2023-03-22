@@ -1,4 +1,6 @@
 import csv
+import shlex
+import subprocess
 from typing import List, Union
 from io import StringIO
 import multiprocessing
@@ -206,19 +208,49 @@ def spurious_dict_bam_by_sample_to_bed(spurious_dict, bam_list, out_removed_junc
     return sample_to_bed
 
 
-def filter_bam_with_vacuum(bam_path, spurious_junctions_bed, out_bam_path):
-    vacuum_path = utils.get_vacuum_path()
-    vacuum_cmd = f'{vacuum_path} -o {out_bam_path} {bam_path} {spurious_junctions_bed}'
-    os.system(vacuum_cmd)
-    return out_bam_path
+def filter_bam_with_vacuum(bam_path, spurious_junctions_bed, out_bam_path, verbose, removed_alignments_bam):
+    vacuum_cmd = "vacuum --remove_mate "
+    if verbose:
+        vacuum_cmd = f"{vacuum_cmd} -V"
+    if removed_alignments_bam:
+        out_bam_name = os.path.splitext(out_bam_path)[0]
+        vacuum_cmd = f'{vacuum_cmd} -r {out_bam_name}_removed_alignments.bam'
+    vacuum_cmd = f'{vacuum_cmd} -o {out_bam_path} {bam_path} {spurious_junctions_bed}'
+    vacuum_cmd = shlex.split(vacuum_cmd)
 
-def filter_multi_bam_with_vacuum(bam_list, sample_to_bed, out_bam_list, p):
+    #use subprocess to run vacuum_cmd and return stdout and stderr
+    process = subprocess.Popen((vacuum_cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = process.communicate()
+    if process.returncode != 0:
+        print(f"Error running vacuum. Return code: {process.returncode}")
+        print(f"stdout: {out.decode('utf-8')}")
+        print(f"stderr: {err.decode('utf-8')}")
+        sys.exit(1)
+    
+    return out.decode()
+
+def filter_multi_bam_with_vacuum(bam_list, sample_to_bed, out_bam_list, p, verbose, removed_alignments_bam):
+    #if verbose is true, make a vector of True values for each bam file
+    if verbose:
+        verbose = [True for bam in bam_list]
+    else:
+        verbose = [False for bam in bam_list]
+    
+    if removed_alignments_bam:
+        removed_alignments_bam = [True for bam in bam_list]
+    else:
+        removed_alignments_bam = [False for bam in bam_list]
+
+
     sample_names = [os.path.splitext(os.path.basename(bam_path))[0] for bam_path in bam_list]
     #run filter_bam_with_vacuum in parallel with multiprocessing starmap
     pool = multiprocessing.Pool(processes=p)
     with pool:
-        pool.starmap(filter_bam_with_vacuum, zip(bam_list, [sample_to_bed[sample] for sample in sample_names], out_bam_list))
-
+        outs = pool.starmap(filter_bam_with_vacuum, zip(bam_list, [sample_to_bed[sample] for sample in sample_names], 
+                                                 out_bam_list, verbose, removed_alignments_bam))
+    if verbose:
+        for out in outs:
+            print(out)
 
 #def write_gtf_to_bed(spurious_dict, out_removed_junctions_filelist, scoring):
     # sorted_keys = spurious_dict.keys()

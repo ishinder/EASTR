@@ -1,19 +1,7 @@
 import argparse
-from collections import defaultdict
-import csv
-from ctypes import Union
-import multiprocessing
 import os
 import sys
-from EASTR import extract_junctions, output_utils, utils, get_spurious_introns, alignment_utils, output_utils
-from io import StringIO
-from posixpath import basename
-import pandas as pd
-from itertools import repeat
-import pandas as pd
-import re
-from typing import List, Union
-
+from EASTR import output_utils, utils, get_spurious_introns, alignment_utils, output_utils
 
 def parse_args(arglist):
     parser = argparse.ArgumentParser(
@@ -33,7 +21,7 @@ def parse_args(arglist):
     #bt2 args:
     parser.add_argument(
         "--bt2_k",
-        help="minimum number of distinct alignments found by bowtie2 such that a given junction may be \
+        help="minimum number of distinct alignments found by bowtie2 for a junction to be \
         considered spurious",
         default=10,
         type=int
@@ -71,7 +59,7 @@ def parse_args(arglist):
     #     "--keep_temp", default=False, action="store_true",
     #     help="Keep intermediate files")
 
-    parser.add_argument(
+    parser.add_argument( #TODO: directory instead of store_true
         "--removed_alignments_bam", default=False, action="store_true",
         help="Write removed alignments to a BAM file")
 
@@ -287,4 +275,3 @@ def main(arglist=None):
 if __name__ == '__main__':
     main()
     
-
