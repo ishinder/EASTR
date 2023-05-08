@@ -2,6 +2,8 @@ from subprocess import run
 import os
 import shlex
 from xml.sax.handler import feature_namespaces
+
+import pkg_resources
 import pysam
 from posixpath import dirname
 import collections
@@ -58,3 +60,27 @@ def get_chroms_list_from_fasta(ref_fa):
     for chrom in chroms:
         chrom_sizes[chrom] = fasta.get_reference_length(chrom)
     return chrom_sizes
+
+
+def get_package_path():
+    eastr_package_name = "EASTR"
+    eastr_path = pkg_resources.resource_filename(eastr_package_name, "")
+    parent_dir = os.path.dirname(eastr_path)
+    return parent_dir
+
+def get_vacuum_path():
+    eastr_path = get_package_path()
+    vacuum_path = os.path.join(eastr_path, "utils", "vacuum")
+    return vacuum_path
+
+def get_junction_extractor_path():
+    eastr_path = get_package_path()
+    junction_extractor_path = os.path.join(eastr_path, "utils", "junction_extractor")
+    return junction_extractor_path
+
+def check_directory_or_file(path:str) -> str:
+    if os.path.splitext(os.path.basename(path))[1]!='':
+        return 'file'
+    else:
+        return 'dir'
+

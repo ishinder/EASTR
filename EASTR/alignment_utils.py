@@ -14,7 +14,7 @@ def get_seq(chrom,start,end,pysam_fa):
     return seq
 
 
-def align_seq_pair(rseq,qseq,scoring,k,w,m,best_n=1):
+def align_seq_pair(rseq:str, qseq:str, scoring:list, k:int, w:int, m:int, best_n=1):
     #TODO ambiguous bases not working
     a = mp.Aligner(seq=rseq,k=k,w=w,best_n=best_n,scoring=scoring,min_chain_score=m)
     itr = list(a.map(qseq,MD=True,cs=True))
@@ -26,6 +26,8 @@ def align_seq_pair(rseq,qseq,scoring,k,w,m,best_n=1):
         return
     
     for hit in itr:
+        #TODO if hit.r_st==intron_len <- look for additional alignments?
+        #or it is not needed because the longest alignment is the "best" one?
 
         if hit.strand != 1:
             continue

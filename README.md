@@ -1,75 +1,117 @@
-# Emend Alignment of Spliced Transcript Reads (EASTR)
-EASTR is a software tool that finds and removes spurious spliced alignments caused by repeated sequences. 
-EASTR can be applied to any RNA-seq dataset regardless of the alignment software used.
+
+# Emending Alignments of Spliced Transcript Reads (EASTR)
+\(\\(\\  
+\(-.-\)  
+o\(''\)(''\)  
+
+EASTR is a tool for detecting and removing spurious splice junctions in RNA-seq datasets. It improves the accuracy of transcriptome assembly and quantification by correcting misaligned reads. The tool can process GTF, BED, and BAM files as input. EASTR can be applied to any RNA-seq dataset regardless of the alignment software used.
 
 <!-- TODO: Give a quick sentence or two to explain what this should do/give you. -->
 ## Required Dependencies
 
-- [RegTools](https://regtools.readthedocs.io/en/latest/)
 - [bowtie2](https://github.com/BenLangmead/bowtie2)
 - [samtools](https://github.com/samtools/samtools)
+- [mappy: Minimap2 Python Binding](https://github.com/lh3/minimap2/tree/master/python) 
 
 ## Getting Started
 
 1. Clone source repository
 
 	```bash
-	git clone https://github.com/ishinder/EASTR
+	git clone --recursive https://github.com/ishinder/EASTR.git
 	cd EASTR
 	```
+2. Compile junction_extractor and vacuum
 
-2. Install EASTR
+    ```bash
+    cd utils
+    mkdir build
+    cd build
+    cmake ..
+    make
+    ```
+
+3. To add the junction_extractor and vacuum executables in the utils folder to your PATH, you can follow these steps:  
+
+    Get the absolute path of the build directory:
+    ```bash 
+    pwd
+    ```
+    This command will print the absolute path of the current directory, which is the `build` directory inside the `utils` folder.
+
+    Add the absolute path to the PATH environment variable:  
+    For temporary use (not persistent across sessions), you can run:
+
+    ```bash
+    export PATH=$PATH:<absolute_path_to_build_directory>
+    ```
+
+    Replace `<absolute_path_to_build_directory>` with the path you obtained in the previous step.
+ 
+    For persistent use (across sessions), you can add the `export` command to your shell's configuration file. For bash, this is typically the `.bashrc` or `.bash_profile` file in your home directory. For zsh, this is the `.zshrc` file. To add the path to your shell configuration file, run:
+
+    ```bash
+    echo 'export PATH=$PATH:<absolute_path_to_build_directory>' >> ~/.bashrc
+    ```
+
+4. Install EASTR
 	```bash
 	# (OPTIONAL) Install in a Python virtual environment
 	# python3 -m virtualenv venv # (OPTIONAL)
-	# source ./venv/bin/activate # (OPTIONAL)
+	# source .venv/bin/activate # (OPTIONAL)
 	make install # Install EASTR package
 	```
 
-3. OPTIONAL: Download test data
+5. OPTIONAL: Download test data
   ```bash
-  wget ftp://ftp.ccb.jhu.edu/pub/ishinder/bt2_index.tar.gz
-  wget ftp://ftp.ccb.jhu.edu/pub/ishinder/hisat_alns.tar.gz
-  wget ftp://ftp.ccb.jhu.edu/pub/ishinder/ref_fa.gz
   wget ftp://ftp.ccb.jhu.edu/pub/ishinder/chrX.gtf
   ```
 
+### Required Arguments
+
+Note: Only one of the above input options (GTF, BED, or BAM) should be provided.  
+- `--gtf` : Input GTF file containing transcript annotations
+- `--bed` : Input BED file with intron coordinates
+- `--bam` : Input BAM file or a TXT file containing a list of BAM files with read alignments
+
+  
+Additionally, the following arguments are required:
+- `-r`, `--reference` : Reference FASTA genome used in alignment
+- `-i`, `--bowtie2_index` : Path to Bowtie2 index for the reference genome
+
+### Optional Arguments
+
+- `--bt2_k` : Minimum number of distinct alignments found by bowtie2 for a junction to be considered spurious. Default: 10
+- `-o` : Length of the overhang on either side of the splice junction. Default: 50
+- `-a` : Minimum required anchor length in each of the two exons. Default: 7
+- `--min_junc_score` : Minimum number of supporting spliced reads required per junction. Default: 1
+- `--trusted_bed` : Path to a BED file path with trusted junctions, which will not be removed by EASTR.
+- `--verbose` : Display additional information during BAM filtering, including the count of total spliced alignments and removed alignments
+- `--removed_alignments_bam` : Write removed alignments to a BAM file
+- `-p` : Number of parallel processes. Default: 1
+
+### Minimap2 Parameters
+
+- `-A` : Matching score. Default: 3
+- `-B` : Mismatching penalty. Default: 4
+- `-O` : Gap open penalty. Default: [12, 32]
+- `-E` : Gap extension penalty. Default: [2, 1]
+- `-k` : K-mer length for alignment. Default: 3
+- `--scoreN` : Score of a mismatch involving ambiguous bases. Default: 1
+- `-w` : Minimizer window size. Default: 2
+- `-m` : Discard chains with chaining score. Default: 25
+
+### Output Options
+
+- `--out_original_junctions` : Write original junctions to the output file or directory
+- `--out_removed_junctions` : Write removed junctions to the output file or directory; the default output is to the terminal
+- `--out_filtered_bam` : Write filtered bams to the output file or directory
+- `--filtered_bam_suffix` : Suffix added to the name of the output BAM files. Default: '_EASTR_filtered'
+
+
+
+
 ## Usage
-```shell
-usage: EASTR [-h] [-R REFERENCE] [-bam BAM] [-A A] [-B B] [-O O O] [-E E E] [-k K] [--scoreN SCOREN] [-w W] [-p P] [-o FILE]
-
-Emend alignments of spuriously spliced transcript reads
-
-options:
-  -h, --help            show this help message and exit
-  -R REFERENCE, --reference REFERENCE
-                        reference fasta genome used in alignment
-  -bam BAM              Input BAM file to emend alignments
-  -A A                  Matching score, default = 2
-  -B B                  Mismatching penalty, default = 4
-  -O O O                Gap open penalty, default = [4, 24]
-  -E E E                Gap extension penalty, default = [2, 1]. A gap of length k costs min(O1+k*E1, O2+k*E2).
-  -k K                  kmer length for alignment, default=7
-  --scoreN SCOREN       Score of a mismatch involving ambiguous bases, default=1
-  -w W                  minimizer window size, default=7
-  -p P                  Number of parallel processes, default=1
-  -o FILE               write output to FILE; the default output is to terminal
-```
-
-## Input files
-
-### Alignment file
-The input file must be a BAM file generated by a splice aware aligner (HISAT2 or STAR)
-The alignment file should be sorted by coordinate.
-
-### Reference fasta file 
-The reference fasta file is used to obtain flanking intronic sequences. 
-This file should match the contigs in the provided BAM file.
-
-### Bowtie2 index 
-
-
-### Reference annotation file
 
 
 
