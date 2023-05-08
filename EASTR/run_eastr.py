@@ -6,58 +6,60 @@ from EASTR import output_utils, utils, get_spurious_introns, alignment_utils, ou
 def parse_args(arglist):
     parser = argparse.ArgumentParser(
         prog="EASTR",
-        description="Emending alignments of spuriously spliced transcript reads"
+        description="EASTR: Emending alignments of spuriously spliced transcript reads. "
+                    "The script takes GTF, BED, or BAM files as input and processes them using "
+                    "the provided reference genome and BowTie2 index. It identifies spurious junctions "
+                    "and filters the input data accordingly."
     )
 
     #required args
     group_reqd = parser.add_mutually_exclusive_group(required=True)
-    group_reqd.add_argument('--gtf', help='Input GTF file')
+    group_reqd.add_argument('--gtf', help='Input GTF file containing transcript annotations')
     group_reqd.add_argument('--bed', help='Input BED file with intron coodrdiantes')
-    group_reqd.add_argument('--bam', help='Input BAM file or a TXT file containing a list of BAM files')
-    parser.add_argument("-r", "--reference", required=True, help="reference fasta genome used in alignment")
-    parser.add_argument('-i','--bowtie2_index', required=True, help='path to bowtie2 index')
+    group_reqd.add_argument('--bam', help='Input BAM file or a TXT file containing a list of BAM files with read alignments')
+    parser.add_argument("-r", "--reference", required=True, help="reference FASTA genome used in alignment")
+    parser.add_argument('-i','--bowtie2_index', required=True, help='Path to Bowtie2 index for the reference genome')
 
 
     #bt2 args:
     parser.add_argument(
         "--bt2_k",
-        help="minimum number of distinct alignments found by bowtie2 for a junction to be \
-        considered spurious",
+        help="Minimum number of distinct alignments found by bowtie2 for a junction to be \
+        considered spurious. Default: 10",
         default=10,
         type=int
     )
     #EASTR args
     parser.add_argument(
         "-o",
-        help="overhang on either side of the splice junction, default = 50",
+        help="Length of the overhang on either side of the splice junction. Default = 50",
         default=50,
         type=int)
 
     parser.add_argument(
         "-a",
-        help="minimum required anchor length in each of the two exons, default = 7",
+        help="Minimum required anchor length in each of the two exons, default = 7",
         default=7,
         type=int
     )
 
     parser.add_argument(
         "--min_junc_score", 
-        help=" minimum number of supporting spliced reads required per junction. \
-        Any self-aligning junction with less than the minimum number of supporting reads per all samples is filtered",
+        help=" Minimum number of supporting spliced reads required per junction. "
+            "Junctions with fewer supporting reads in all samples are filtered out "
+            "if the flanking regions are similar (based on mappy scoring matrix). Default: 1",
         default=1,
         type=int)
 
     parser.add_argument(
         "--trusted_bed", 
-        help="BED file path with trusted junctions (will not be removed by EASTR)")
+        help="Path to a BED file path with trusted junctions, which will not be removed by EASTR."
     
     parser.add_argument(
         "--verbose", default=False, action="store_true",
-        help="If filtering bam, print count of total spliced alignment and removed alignments")
+        help="Display additional information during BAM filtering, "
+        "including the count of total spliced alignments and removed alignments")
     
-    # parser.add_argument(
-    #     "--keep_temp", default=False, action="store_true",
-    #     help="Keep intermediate files")
 
     parser.add_argument( #TODO: directory instead of store_true
         "--removed_alignments_bam", default=False, action="store_true",
@@ -68,13 +70,13 @@ def parse_args(arglist):
 
     group_mm2.add_argument(
         "-A",
-        help="Matching score, default = 3",
+        help="Matching score. Default = 3",
         default=3,
         type=int)
 
     group_mm2.add_argument(
         "-B",
-        help="Mismatching penalty, default = 4",
+        help="Mismatching penalty. Default = 4",
         default=4,
         type=int)
 
@@ -82,40 +84,40 @@ def parse_args(arglist):
         "-O",
         nargs=2,
         type=int,
-        help="Gap open penalty, default = [12, 32]",
+        help="Gap open penalty. Default = [12, 32]",
         default=[12,32])
     
     group_mm2.add_argument(
         "-E",
         nargs=2,
         type=int,
-        help="Gap extension penalty, default = [2, 1]. A gap of length k costs min(O1+k*E1, O2+k*E2).",
+        help="Gap extension penalty. A gap of length k costs min(O1+k*E1, O2+k*E2). Default = [2, 1]",
         default=[2,1])
 
     group_mm2.add_argument(
         "-k",
-        help="kmer length for alignment, default=3",
+        help="K-mer length for alignment. Default=3",
         default=3,
         type=int
     )
 
     group_mm2.add_argument(
         "--scoreN",
-        help="Score of a mismatch involving ambiguous bases, default=1",
+        help="Score of a mismatch involving ambiguous bases. Default=1",
         default=1,
         type=int
     )
 
     group_mm2.add_argument(
         "-w",
-        help="minimizer window size, default=2",
+        help="Minimizer window size. Default=2",
         default=2, 
         type=int
     )
 
     group_mm2.add_argument(
         "-m",
-        help="Discard chains with chaining score, default=25.",
+        help="Discard chains with chaining score. Default=25.",
         default=25, 
         type=int
     )
@@ -124,16 +126,16 @@ def parse_args(arglist):
     group_out = parser.add_argument_group('Output')
 
     group_out.add_argument("--out_original_junctions", default=None, metavar='OUT',
-                        help="write original junctions to OUT file or directory")
+                        help="Write original junctions to the OUT file or directory")
     
     group_out.add_argument("--out_removed_junctions", default='stdout', metavar='OUT',
-                        help="write removed junctions to OUT file or directory; the default output is to terminal")
+                        help="Write removed junctions to OUT file or directory; the default output is to terminal")
 
     group_out.add_argument("--out_filtered_bam", metavar='OUT',default=None,
-                        help="write filtered bams to OUT file or directory")
+                        help="Write filtered bams to OUT file or directory")
 
     group_out.add_argument("--filtered_bam_suffix", metavar='STR',default="_EASTR_filtered",
-                        help="suffix added to the name of the output BAM files, default='_EASTR_filtered'")
+                        help="Suffix added to the name of the output BAM files. Default='_EASTR_filtered'")
 
 
     #other args
@@ -143,7 +145,6 @@ def parse_args(arglist):
         default=1,
         type=int
     )
-
 
 
     return parser.parse_args()
