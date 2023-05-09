@@ -60,11 +60,6 @@ EASTR is a tool for detecting and removing spurious splice junctions in RNA-seq 
 	make install # Install EASTR package
 	```
 
-5. OPTIONAL: Download test data
-  ```bash
-  wget ftp://ftp.ccb.jhu.edu/pub/ishinder/chrX.gtf
-  ```
-
 ### Required Arguments
 
 Note: Only one of the above input options (GTF, BED, or BAM) should be provided.  
@@ -131,7 +126,7 @@ The run_eastr.sh script demonstrates two different ways to run the EASTR pipelin
     ```
 ### Running EASTR on a GTF
   Run the EASTR pipeline on the GTF file with the following command:  
-  
+
     ```bash
     eastr 
         --gtf /path/to/gtf_file 
@@ -156,7 +151,7 @@ To execute the entire EASTR pipeline, which filters BAM files and identifies ref
 
 The script will download the necessary FASTQ files, reference genome, and then perform the alignment and EASTR analysis. The output files will be generated in their respective directories within the `tests` folder.
 
-*Note 1*: Downloading FASTQ files using the `get_fastq.sh` script requires [SRA_toolkit](https://github.com/ncbi/sra-tools)
+*Note 1*: Downloading FASTQ files using the `get_fastq.sh` script requires [SRA_toolkit](https://github.com/ncbi/sra-tools)  
 *Note 2*: Converting the GFF reference annotation to GTF in the `get_ref.sh` script required [gffread](https://github.com/gpertea/gffread)
 
 <!-- 
