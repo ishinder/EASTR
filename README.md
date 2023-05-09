@@ -121,22 +121,22 @@ The `run_eastr.sh` script in the `tests` directory demonstrates two different wa
         --verbose #optional
     ```
 ### Running EASTR on a GTF
-Run the EASTR pipeline on the GTF file with the following command:  
-```bash
-  eastr 
-    --gtf /path/to/gtf_file 
-    --reference /path/to/reference_fasta 
-    --bowtie2_index /path/to/bowtie2_index 
-    --out_removed_junctions /path/to/output/outfile.bed # optional 
-```
+  Run the EASTR pipeline on the GTF file with the following command:  
+  ```bash
+    eastr 
+      --gtf /path/to/gtf_file 
+      --reference /path/to/reference_fasta 
+      --bowtie2_index /path/to/bowtie2_index 
+      --out_removed_junctions /path/to/output/outfile.bed # optional 
+  ```
 
 
 ## Analyzing an example dataset
-We have included a script that demonstrates the application of the EASTR pipeline to an *Arabidopsis* dataset featured in our study.The `sra_list_arabidopsis.txt` file, located in the `tests` directory, lists the accession IDs of the samples analyzed.
+We have included a script that demonstrates the application of the EASTR pipeline to an *Arabidopsis* dataset featured in our study. The `sra_list_arabidopsis.txt` file, located in the `tests` directory, lists the accession IDs of the samples analyzed.
 
-The EASTR pipeline takes BAM files as input. The run_all.sh script acquires FASTQ files, the FASTA reference and annotation, and then aligns the FASTQ files using HISAT2 to generate BAM files. These BAM files are subsequently used as input to EASTR. Additionally, EASTR can accept a GTF annotation file and output a BED file containing questionable junctions (executed in the last command of the run_eastr.sh script).
+The EASTR pipeline takes BAM files as input. The `run_all.sh` script acquires FASTQ files, the FASTA reference and annotation, and then aligns the FASTQ files using HISAT2 to generate BAM files. These BAM files are subsequently used as input to EASTR. Additionally, EASTR can accept a GTF annotation file and output a BED file containing questionable junctions (executed in the last command of the `run_eastr.sh` script).
 
-To execute the entire EASTR pipeline, which filters BAM files and identifies reference annotation errors, use the run_all.sh script found in the tests directory. This script ensures all necessary steps and subscripts are carried out in the correct order. To analyze the example dataset, follow these steps:
+To execute the entire EASTR pipeline, which filters BAM files and identifies reference annotation errors, use the `run_all.sh` script found in the `tests` directory. This script ensures all necessary steps and subscripts are carried out in the correct order. To analyze the example dataset, follow these steps:
 
 1. Navigate to the `tests` directory within the EASTR package:
 2. Make sure all scripts are executable (`chmod +x *sh`):
