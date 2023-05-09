@@ -34,7 +34,7 @@ fi
     --out_removed_junctions ${OUTDIR}/removed_junctions \
     --out_filtered_bam ${BASEDIR}/BAM/filtered \
     --removed_alignments_bam \
-    -p $NCPUS &> eastr_run.log) 2>> time_bamlist.log
+    -p $NCPUS &> eastr_run.log) 2> time_bamlist.log
 
 
 #run eastr on gtf
@@ -46,4 +46,4 @@ GTF="$(ls ${BASEDIR}/ref/*.gtf)"
     -p $NCPUS \
     -r $REF_FA \
     -i $BT2_INDEX \
-    --out_removed_junctions spurious_introns_in_gtf.bed) 2>> time_gtf.log
+    --out_removed_junctions spurious_introns_in_gtf.bed) 2> time_gtf.log
