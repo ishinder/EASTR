@@ -34,7 +34,7 @@ fi
     --out_removed_junctions ${OUTDIR}/removed_junctions \
     --out_filtered_bam ${BASEDIR}/BAM/filtered \
     --removed_alignments_bam \
-    -p $NCPUS &> eastr_run.log) 2> time_bamlist.log
+    -p $NCPUS 2> time_bamlist.log) &> eastr_run.log
 
 
 #run eastr on gtf
