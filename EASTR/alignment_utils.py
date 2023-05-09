@@ -106,7 +106,7 @@ def get_flanking_subsequences(introns,chrom_sizes,overhang,ref_fa):
     tmp_fa = tempfile.NamedTemporaryFile(dir=os.getcwd(),delete=False)
 
     seen = set()
-    for key in introns:
+    for key in list(introns.keys()):
         chrom = key[0]
         jstart = (key[1])
         jend = key[2]
@@ -119,6 +119,12 @@ def get_flanking_subsequences(introns,chrom_sizes,overhang,ref_fa):
         r2 = f'{chrom}:{qstart}-{qend}'
         introns[key]['jstart'] = r1
         introns[key]['jend'] = r2
+
+        if rstart> max_length or qstart > max_length:
+            #remove key from introns dict
+            del introns[key]
+            print(f'Warning: intron {key} from the GTF file is out of range in FASTA file. Skipping...')
+            continue
 
         for r in [r1,r2]:
             if r not in seen:

@@ -102,6 +102,9 @@ def extract_splice_sites_gtf(gtf_path:str) -> dict:
             if attr:
                 attr, _, val = attr.strip().partition(' ')
                 values_dict[attr] = val.strip('"')
+        
+        if 'gene_id' not in values_dict:
+            values_dict['gene_id'] = "NA"
 
         if 'transcript_id' not in values_dict:
             raise Exception("Exon does not contain transcript ID\n")
