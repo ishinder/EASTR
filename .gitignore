@@ -157,7 +157,9 @@ cython_debug/
 *.code-workspace
 
 #testing
-tests/
+tests/*
+!tests/*.sh
+!tests/sra_list_arabidopsis.txt
 EASTR/test*/
 tmp/
 tmp*
