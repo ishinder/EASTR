@@ -54,6 +54,7 @@ def parse_args(arglist):
     parser.add_argument(
         "--trusted_bed", 
         help="Path to a BED file path with trusted junctions, which will not be removed by EASTR."
+    )
     
     parser.add_argument(
         "--verbose", default=False, action="store_true",
