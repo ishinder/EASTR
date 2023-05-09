@@ -13,12 +13,15 @@ EASTR is a tool for detecting and removing spurious splice junctions in RNA-seq 
 - [mappy: Minimap2 Python Binding](https://github.com/lh3/minimap2/tree/master/python) 
 
 ## Getting Started
+The installation steps for running EASTR are outlined below. Installation takes a few minutes. 
+
 1. Clone source repository
 	```bash
 	git clone --recursive https://github.com/ishinder/EASTR.git
 	cd EASTR
 	```
 2. Compile junction_extractor and vacuum
+   (Note: )
     ```bash
     cd utils
     cmake
@@ -143,6 +146,8 @@ To execute the entire EASTR pipeline, which filters BAM files and identifies ref
 3. Run the `run_all.sh` script.
 
 The script will download the necessary FASTQ files, reference genome, and then perform the alignment and EASTR analysis. The output files will be generated in their respective directories within the `tests` folder.
+
+When executed on 4 CPUs, the EASTR command to filter 6 BAM files completes in approximately 35 minutes, with the bulk of this time being dedicated to the filtering of BAM files \(a single bam file typically takes between 15-20 minutes to filter on a single CPU). On 1 CPU, the EASTR command to identify questionable introns in an annotation takes about 30 seconds.
 
 *Note 1*: Downloading FASTQ files using the `get_fastq.sh` script requires [SRA_toolkit](https://github.com/ncbi/sra-tools)  
 *Note 2*: Converting the GFF reference annotation to GTF in the `get_ref.sh` script required [gffread](https://github.com/gpertea/gffread)
