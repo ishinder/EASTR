@@ -6,23 +6,19 @@ o\(''\)(''\)
 
 EASTR is a tool for detecting and removing spurious splice junctions in RNA-seq datasets. It improves the accuracy of transcriptome assembly and quantification by identifying and removing misaligned spliced alignment. The tool can process GTF, BED, and BAM files as input. EASTR can be applied to any RNA-seq dataset regardless of the alignment software used.
 
-<!-- TODO: Give a quick sentence or two to explain what this should do/give you. -->
-## Required Dependencies
 
+## Required Dependencies
 - [bowtie2](https://github.com/BenLangmead/bowtie2)
 - [samtools](https://github.com/samtools/samtools)
 - [mappy: Minimap2 Python Binding](https://github.com/lh3/minimap2/tree/master/python) 
 
 ## Getting Started
-
 1. Clone source repository
-
 	```bash
 	git clone --recursive https://github.com/ishinder/EASTR.git
 	cd EASTR
 	```
 2. Compile junction_extractor and vacuum
-
     ```bash
     cd utils
     cmake
@@ -104,7 +100,7 @@ Additionally, the following arguments are required:
 
 ## Usage
 
-The run_eastr.sh script demonstrates two different ways to run the EASTR pipeline: on a bamlist and on a GTF file. Below, we provide instructions for each use case.
+The `run_eastr.sh` script in the `tests` directory demonstrates two different ways to run the EASTR pipeline: on a bamlist and on a GTF file. Below, we provide instructions for each use case.
 
 ### Running EASTR on a bamlist
 1. Ensure you are in the appropriate directory containing the BAM/original folder and reference files.
@@ -125,20 +121,17 @@ The run_eastr.sh script demonstrates two different ways to run the EASTR pipelin
         --verbose #optional
     ```
 ### Running EASTR on a GTF
-  Run the EASTR pipeline on the GTF file with the following command:  
-
-    ```bash
-    eastr 
-        --gtf /path/to/gtf_file 
-        --reference /path/to/reference_fasta 
-        --bowtie2_index /path/to/bowtie2_index 
-        --out_removed_junctions /path/to/output/spurious_introns_in_gtf.bed # optional 
-    ```
-
+Run the EASTR pipeline on the GTF file with the following command:  
+```bash
+  eastr 
+    --gtf /path/to/gtf_file 
+    --reference /path/to/reference_fasta 
+    --bowtie2_index /path/to/bowtie2_index 
+    --out_removed_junctions /path/to/output/outfile.bed # optional 
+```
 
 
 ## Analyzing an example dataset
-
 We have included a script that demonstrates the application of the EASTR pipeline to an *Arabidopsis* dataset featured in our study.The `sra_list_arabidopsis.txt` file, located in the `tests` directory, lists the accession IDs of the samples analyzed.
 
 The EASTR pipeline takes BAM files as input. The run_all.sh script acquires FASTQ files, the FASTA reference and annotation, and then aligns the FASTQ files using HISAT2 to generate BAM files. These BAM files are subsequently used as input to EASTR. Additionally, EASTR can accept a GTF annotation file and output a BED file containing questionable junctions (executed in the last command of the run_eastr.sh script).
