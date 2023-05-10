@@ -21,7 +21,6 @@ The installation steps for running EASTR are outlined below. Installation takes 
 	cd EASTR
 	```
 2. Compile junction_extractor and vacuum
-   (Note: )
     ```bash
     cd utils
     cmake
