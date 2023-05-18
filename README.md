@@ -4,7 +4,7 @@
 \(-.-\)  
 o\(''\)(''\)  
 
-EASTR is a tool for detecting and removing spurious splice junctions in RNA-seq datasets. It improves the accuracy of transcriptome assembly and quantification by identifying and removing misaligned spliced alignment. The tool can process GTF, BED, and BAM files as input. EASTR can be applied to any RNA-seq dataset regardless of the alignment software used.
+EASTR is a tool for detecting and removing spurious splice junctions in RNA-seq datasets. It improves the accuracy of transcriptome assembly and quantification by identifying and removing misaligned spliced alignments. The tool can process GTF, BED, and BAM files as input. EASTR can be applied to any RNA-seq dataset regardless of the alignment software used.
 
 
 ## Required Dependencies
@@ -27,7 +27,7 @@ The installation steps for running EASTR are outlined below. Installation takes 
     make
     ```
 
-3. To add the junction_extractor and vacuum executables in the utils folder to your PATH, you can follow these steps:  
+3. To add the junction_extractor and vacuum executables in the `utils` folder to your PATH, you can follow these steps:  
 
     Get the absolute path of the build directory:
     ```bash 
@@ -60,7 +60,7 @@ The installation steps for running EASTR are outlined below. Installation takes 
 
 ### Required Arguments
 
-Note: Only one of the above input options (GTF, BED, or BAM) should be provided.  
+Note: Only one of the below input options (GTF, BED, or BAM) should be provided.  
 - `--gtf` : Input GTF file containing transcript annotations
 - `--bed` : Input BED file with intron coordinates
 - `--bam` : Input BAM file or a TXT file containing a list of BAM files with read alignments
@@ -149,7 +149,7 @@ The script will download the necessary FASTQ files, reference genome, and then p
 When executed on 4 CPUs, the EASTR command to filter 6 BAM files completes in approximately 35 minutes, with the bulk of this time being dedicated to the filtering of BAM files \(a single bam file typically takes between 15-20 minutes to filter on a single CPU). On 1 CPU, the EASTR command to identify questionable introns in an annotation takes about 30 seconds.
 
 *Note 1*: Downloading FASTQ files using the `get_fastq.sh` script requires [SRA_toolkit](https://github.com/ncbi/sra-tools)  
-*Note 2*: Converting the GFF reference annotation to GTF in the `get_ref.sh` script required [gffread](https://github.com/gpertea/gffread)
+*Note 2*: Converting the GFF reference annotation to GTF in the `get_ref.sh` script requires [gffread](https://github.com/gpertea/gffread)
 
 <!-- 
 # Citation
