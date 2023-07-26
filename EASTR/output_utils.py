@@ -14,7 +14,7 @@ def out_junctions_filelist(bam_list:list, gtf_path, bed_list, out_junctions, suf
         return None
     
     if gtf_path:
-        if utils.check_directory_or_file(out_junctions) == 'directory':
+        if utils.check_directory_or_file(out_junctions) == 'dir':
             out_junctions= out_junctions + "/" + os.path.splitext(os.path.basename(gtf_path)[0]) + suffix + ".bed"     
         return out_junctions
     
@@ -23,7 +23,7 @@ def out_junctions_filelist(bam_list:list, gtf_path, bed_list, out_junctions, suf
             return None
         
         if len(bed_list) == 1:
-            if utils.check_directory_or_file(out_junctions) == 'directory':
+            if utils.check_directory_or_file(out_junctions) == 'dir':
                 out_junctions = f"{out_junctions}/{os.path.splitext(os.path.basename(gtf_path))[0]}{suffix}.bed"
             path = os.path.dirname(out_junctions)
             utils.make_dir(path)
@@ -40,7 +40,7 @@ def out_junctions_filelist(bam_list:list, gtf_path, bed_list, out_junctions, suf
         return out_junctions_filelist
     
     if len(bam_list) == 1:
-        if utils.check_directory_or_file(out_junctions) == 'directory':
+        if utils.check_directory_or_file(out_junctions) == 'dir':
             out_junctions = f"{out_junctions}/{os.path.splitext(os.path.basename(bam_list[0]))[0]}{suffix}.bed"
         path = os.path.dirname(out_junctions)
         utils.make_dir(path)
@@ -61,7 +61,7 @@ def out_filtered_bam_filelist(bam_list:list, out_filtered_bam, suffix="_EASTR_fi
         return
 
     if len(bam_list) == 1:
-        if utils.check_directory_or_file(out_filtered_bam) == 'directory':
+        if utils.check_directory_or_file(out_filtered_bam) == 'dir':
             out_filtered_bam = out_filtered_bam + "/" + os.path.splitext(os.path.basename(bam_list[0]))[0] + suffix + ".bam"
         path = os.path.dirname(out_filtered_bam)
         utils.make_dir(path)
