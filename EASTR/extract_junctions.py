@@ -7,17 +7,22 @@ import shlex
 from EASTR import utils
 
 
-def get_junctions_from_bed(bed_path:str) -> dict:
+def get_junctions_from_bed(bed_path: str) -> dict:
     junctions = {}
     with open(bed_path, 'r') as f:
         for line in f:
             line = line.strip()
             if line.startswith('#') or line.startswith('track'):
                 continue
-            chrom, start, end, name, score, strand = line.split('\t')
+            fields = line.split('\t')
+            if len(fields) >= 6:
+                chrom, start, end, name, score, strand = fields[:6]
+            else:
+                raise ValueError("Invalid BED format: Expected at least 6 columns.")
+            
             start, end = int(start), int(end)
             if start > end:
-                raise Exception("Start of region can not be greater than end of region for:\n",line)
+                raise Exception("Start of region cannot be greater than end of region for:\n", line)
             junctions[(chrom, start, end, strand)] = (name, score)
     return junctions
 
