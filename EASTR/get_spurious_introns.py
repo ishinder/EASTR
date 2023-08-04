@@ -8,6 +8,7 @@ import shlex
 from collections import defaultdict
 import os
 import tempfile
+import time
 
 def get_self_aligned_introns(introns, seqs, overhang, k, w, m, scoring):
     self_introns = {}
@@ -179,7 +180,7 @@ def get_spurious_introns(self_introns, seqs, bt2_index, overhang, anchor=7, min_
 
 def get_spurious_junctions(scoring, k, w, m, overhang, bt2_index, bt2_k, ref_fa, p, anchor,
                             min_junc_score, bam_list, gtf_path,
-                                    bed_path, trusted_bed, out_original_junctions):
+                                    bed_path, trusted_bed, out_original_junctions, verbose):
     chrom_sizes = get_chroms_list_from_fasta(ref_fa)
 
     if bam_list:
@@ -196,7 +197,16 @@ def get_spurious_junctions(scoring, k, w, m, overhang, bt2_index, bt2_k, ref_fa,
                 f.close()
             out_original_junctions = [f.name for f in out_original_junctions]
 
+        
+        if verbose:
+            start_extr = time.time()
+            print('extracting junctions from bam files...')
+        
         introns = extract_junctions.junction_extractor_multi_bam(bam_list,out_original_junctions,p)
+
+        if verbose:
+            end_extr = time.time()
+            print('extracting junctions took {} seconds'.format(end_extr-start_extr))
 
         #delete all the temporary files in out_original_junctions:
         if remove_tmp:
@@ -218,10 +228,18 @@ def get_spurious_junctions(scoring, k, w, m, overhang, bt2_index, bt2_k, ref_fa,
         trusted_introns = extract_junctions.get_junctions_from_bed(trusted_bed)
         introns = {k:v for k,v in introns.items() if k not in trusted_introns}
 
+    if verbose:
+        print('Getting spurious junctions...')
+        start_spur = time.time()
+
     seqs = alignment_utils.get_flanking_subsequences(introns, chrom_sizes, overhang, ref_fa)
     self_introns = get_self_aligned_introns(introns, seqs, overhang, k, w, m, scoring)
     spurious_dict = get_spurious_introns(self_introns, seqs, bt2_index, overhang, anchor=anchor,
                                      min_junc_score=min_junc_score, p=p, is_bam=is_bam, bt2_k=bt2_k)
     spurious_dict  = dict(sorted(spurious_dict.items(), key=lambda x: (x[0][1], x[0][1], x[0][2], x[0][3])))
+
+    if verbose:
+        end_spur = time.time()
+        print('Getting spurious junctions took {} seconds'.format(end_spur - start_spur))
 
     return spurious_dict

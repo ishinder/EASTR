@@ -18,6 +18,8 @@ def get_junctions_from_bed(bed_path: str) -> dict:
             if len(fields) >= 6:
                 chrom, start, end, name, score, strand = fields[:6]
             else:
+                print(f"Error in file: {bed_path}")
+                print(f"Offending line: {line}")
                 raise ValueError("Invalid BED format: Expected at least 6 columns.")
             
             start, end = int(start), int(end)

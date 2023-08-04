@@ -248,7 +248,7 @@ def main(arglist=None):
     
     spurious_dict = get_spurious_introns.get_spurious_junctions(scoring, k, w, m, overhang, bt2_index, bt2_k,
                                     ref_fa, p, anchor, min_junc_score, bam_list, gtf_path,
-                                    bed_list, trusted_bed, original_junctions_filelist )
+                                    bed_list, trusted_bed, original_junctions_filelist, verbose )
     
 
     if is_bam:

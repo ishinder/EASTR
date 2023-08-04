@@ -179,13 +179,13 @@ def spurious_dict_bam_by_sample_to_bed(spurious_dict, bam_list, out_removed_junc
 
     else:
         for sample in sample_names:
-            longest_match = None
+            shortest_match = None
             for i, sample_id in enumerate(out_removed_junctions_filelist):
                 if sample in sample_id:
-                    if longest_match is None or len(sample_id) > len(longest_match):
-                        longest_match = sample_id
-            if longest_match is not None:  # Only update if a match was found
-                file_path = out_removed_junctions_filelist[out_removed_junctions_filelist.index(longest_match)]
+                    if shortest_match is None or len(sample_id) < len(shortest_match):
+                        shortest_match = sample_id
+            if shortest_match is not None:  # Only update if a match was found
+                file_path = out_removed_junctions_filelist[out_removed_junctions_filelist.index(shortest_match)]
                 file_obj = open(file_path, mode='w+b')
                 sample_to_bed[sample] = file_obj
 
