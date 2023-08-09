@@ -133,30 +133,43 @@ def spurious_dict_all_to_bed(spurious_dict,scoring,fileout,gtf_path, bed_list, b
             out_file.write(out.getvalue())
 
 
-def spurious_dict_bed_by_sample_to_bed(spurious_dict, bed_list, out_removed_junctions_filelist, scoring):
-    sample_names = [os.path.splitext(os.path.basename(bed_path))[0] for bed_path in bed_list]
+def create_sample_to_bed_dict(sample_names, out_removed_junctions_filelist):
     sample_to_bed = {}
     
+    for sample in sample_names:
+        shortest_match = None
+        for i, sample_id in enumerate(out_removed_junctions_filelist):
+            if sample in sample_id:
+                if shortest_match is None or len(sample_id) < len(shortest_match):
+                    shortest_match = sample_id
+        if shortest_match is not None:  # Only update if a match was found
+            file_path = out_removed_junctions_filelist[out_removed_junctions_filelist.index(shortest_match)]
+            file_obj = open(file_path, mode='w+b')
+            sample_to_bed[sample] = file_obj
+            
+    return sample_to_bed
+
+
+
+def spurious_dict_bed_by_sample_to_bed(spurious_dict, bed_list, out_removed_junctions_filelist, scoring):
+    sample_names = [os.path.splitext(os.path.basename(bed_path))[0] for bed_path in bed_list]
+    sample_to_bed = create_sample_to_bed_dict(sample_names, out_removed_junctions_filelist)
+
     if out_removed_junctions_filelist is None:
         return
 
-    else:
-        for sample in sample_names:
-            for i, sample_id in enumerate(out_removed_junctions_filelist):
-                if sample_id == sample:
-                    file_path = out_removed_junctions_filelist[i]
-                    file_obj = open(file_path, mode='w+b')
-                    sample_to_bed[sample] = file_obj
-                    break
-
     sorted_keys = sorted(spurious_dict.keys())
-    for key in sorted_keys:
+    named_keys = {}
+    num_digits = len(str(len(sorted_keys)))
+
+    for i, key in enumerate(sorted_keys):
         chrom, start, end, strand = key
         samples = spurious_dict[key]['samples']
         score2 = alignment_utils.calc_alignment_score(spurious_dict[key]['hit'], scoring)
+        name = "JUNC{:0{}d}".format(i+1, num_digits)
 
-        for name, _, score in samples:
-            sample_to_bed[name].write(f'{chrom}\t{start}\t{end}\t{name}\t{score}\t{strand}\t{score2}\n'.encode())
+        for _, name2, score in samples:
+            sample_to_bed[name2].write(f'{chrom}\t{start}\t{end}\t{name}\t{score}\t{strand}\t{name2}\t{score2}\n'.encode())
 
     for sample in sample_names:
         sample_to_bed[sample].close()
@@ -178,16 +191,7 @@ def spurious_dict_bam_by_sample_to_bed(spurious_dict, bam_list, out_removed_junc
             sample_to_bed[sample] = tempfile.NamedTemporaryFile(delete=False, dir='tmp', suffix='.bed')
 
     else:
-        for sample in sample_names:
-            shortest_match = None
-            for i, sample_id in enumerate(out_removed_junctions_filelist):
-                if sample in sample_id:
-                    if shortest_match is None or len(sample_id) < len(shortest_match):
-                        shortest_match = sample_id
-            if shortest_match is not None:  # Only update if a match was found
-                file_path = out_removed_junctions_filelist[out_removed_junctions_filelist.index(shortest_match)]
-                file_obj = open(file_path, mode='w+b')
-                sample_to_bed[sample] = file_obj
+        sample_to_bed = create_sample_to_bed_dict(sample_names, out_removed_junctions_filelist)
 
     sorted_keys = sorted(spurious_dict.keys())
     named_keys = {}
