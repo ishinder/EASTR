@@ -109,7 +109,7 @@ def is_complete_alignment(hit,overhang,anchor):
         return True
 
 
-def is_spurious_alignment(key, value, seqs, overhang, bt2_k=10, anchor=7):
+def is_spurious_alignment(key, value, seqs, overhang, min_duplicate_exon_length, bt2_k=10, anchor=7):
     is_complete = is_complete_alignment(value['hit'],overhang,anchor)
     hit = value['hit']
 
@@ -124,7 +124,7 @@ def is_spurious_alignment(key, value, seqs, overhang, bt2_k=10, anchor=7):
     
     else:
         #if duplicated exon:
-        if hit.q_st - hit.r_st >= overhang - anchor:
+        if hit.q_st - hit.r_st >= min_duplicate_exon_length:
             if value['seqh'] == 0:
                 # print("duplicated exon")
                 # print(key)
@@ -158,7 +158,8 @@ def is_spurious_alignment(key, value, seqs, overhang, bt2_k=10, anchor=7):
     return True
 
 
-def get_spurious_introns(self_introns, seqs, bt2_index, overhang, anchor=7, min_junc_score=1, p=1, is_bam=True, bt2_k=10):
+def get_spurious_introns(self_introns, seqs, bt2_index, overhang, min_duplicate_exon_length,
+                          anchor=7, min_junc_score=1, p=1, is_bam=True, bt2_k=10):
     introns_to_align = {}
     spurious = {}
     for k,v in self_introns.items():
@@ -172,13 +173,13 @@ def get_spurious_introns(self_introns, seqs, bt2_index, overhang, anchor=7, min_
     bw2_alignments = bowtie2_align_self_introns_to_ref(introns_to_align, seqs, bt2_index, overhang, p=p, len_=15, bt2_k=bt2_k)
 
     for k, v in introns_to_align.items():
-        if is_spurious_alignment(k, v, seqs, overhang, anchor=anchor):
+        if is_spurious_alignment(k, v, seqs, overhang, min_duplicate_exon_length, anchor=anchor):
             spurious[k] = v
 
     return spurious
 
 
-def get_spurious_junctions(scoring, k, w, m, overhang, bt2_index, bt2_k, ref_fa, p, anchor,
+def get_spurious_junctions(scoring, k, w, m, overhang, min_duplicate_exon_length, bt2_index, bt2_k, ref_fa, p, anchor,
                             min_junc_score, bam_list, gtf_path,
                                     bed_path, trusted_bed, out_original_junctions, verbose):
     chrom_sizes = get_chroms_list_from_fasta(ref_fa)
@@ -219,7 +220,9 @@ def get_spurious_junctions(scoring, k, w, m, overhang, bt2_index, bt2_k, ref_fa,
 
     elif bed_path:
         is_bam = False
-        introns = extract_junctions.get_junctions_from_bed(bed_path)
+        if len(bed_path) == 1:
+            introns = extract_junctions.get_junctions_multi_bed(bed_path,p)
+
 
     else:
         raise ValueError('No input file given')
@@ -234,7 +237,7 @@ def get_spurious_junctions(scoring, k, w, m, overhang, bt2_index, bt2_k, ref_fa,
 
     seqs = alignment_utils.get_flanking_subsequences(introns, chrom_sizes, overhang, ref_fa)
     self_introns = get_self_aligned_introns(introns, seqs, overhang, k, w, m, scoring)
-    spurious_dict = get_spurious_introns(self_introns, seqs, bt2_index, overhang, anchor=anchor,
+    spurious_dict = get_spurious_introns(self_introns, seqs, bt2_index, overhang, min_duplicate_exon_length, anchor=anchor,
                                      min_junc_score=min_junc_score, p=p, is_bam=is_bam, bt2_k=bt2_k)
     spurious_dict  = dict(sorted(spurious_dict.items(), key=lambda x: (x[0][1], x[0][1], x[0][2], x[0][3])))
 

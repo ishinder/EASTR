@@ -35,6 +35,13 @@ def parse_args(arglist):
         help="Length of the overhang on either side of the splice junction. Default = 50",
         default=50,
         type=int)
+    
+    parser.add_argument(
+       "--min_duplicate_exon_length",
+         help="Minimum length of the duplicated exon. Default = 43",
+        default=43,
+        type=int
+    )
 
     parser.add_argument(
         "-a",
@@ -184,6 +191,7 @@ def main(arglist=None):
 
     #EASTR variables
     overhang = args.o
+    min_duplicate_exon_length = args.min_duplicate_exon_length
     min_junc_score = args.min_junc_score
     anchor = args.a
     trusted_bed = args.trusted_bed
@@ -246,7 +254,7 @@ def main(arglist=None):
     removed_junctions_filelist = output_utils.out_junctions_filelist(bam_list, gtf_path, bed_list, out_removed_junctions, suffix="_removed_junctions")
     filtered_bam_filelist = output_utils.out_filtered_bam_filelist(bam_list, out_filtered_bam, suffix=suffix)
     
-    spurious_dict = get_spurious_introns.get_spurious_junctions(scoring, k, w, m, overhang, bt2_index, bt2_k,
+    spurious_dict = get_spurious_introns.get_spurious_junctions(scoring, k, w, m, overhang, min_duplicate_exon_length, bt2_index, bt2_k,
                                     ref_fa, p, anchor, min_junc_score, bam_list, gtf_path,
                                     bed_list, trusted_bed, original_junctions_filelist, verbose )
     

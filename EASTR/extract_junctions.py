@@ -23,6 +23,7 @@ def get_junctions_from_bed(bed_path: str) -> dict:
                 raise ValueError("Invalid BED format: Expected at least 6 columns.")
             
             start, end = int(start), int(end)
+            score = int(score)
             if start > end:
                 raise Exception("Start of region cannot be greater than end of region for:\n", line)
             junctions[(chrom, start, end, strand)] = (name, score)
