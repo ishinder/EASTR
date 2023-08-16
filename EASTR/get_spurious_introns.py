@@ -97,7 +97,7 @@ def bowtie2_align_self_introns_to_ref (introns_to_align, seqs, bt2_index, overha
 
     return d #TODO return?
 
-def is_complete_alignment(hit,overhang,anchor):
+def is_two_anchor_alignment(hit,overhang,anchor):
     c1 = (hit.r_en <= overhang + anchor)
     c2 = (hit.r_st >= overhang - anchor)
     c3 = (hit.q_en <= overhang + anchor)
@@ -110,10 +110,10 @@ def is_complete_alignment(hit,overhang,anchor):
 
 
 def is_spurious_alignment(key, value, seqs, overhang, min_duplicate_exon_length, bt2_k=10, anchor=7):
-    is_complete = is_complete_alignment(value['hit'],overhang,anchor)
+    is_two_anchor = is_two_anchor_alignment(value['hit'],overhang,anchor)
     hit = value['hit']
 
-    if is_complete:
+    if is_two_anchor:
         #check unique alignment
         if (value['seq1'] == 1) or (value['seq2'] == 1):
             if value['seqh'] == 0:
