@@ -38,8 +38,8 @@ def parse_args(arglist):
     
     parser.add_argument(
        "--min_duplicate_exon_length",
-         help="Minimum length of the duplicated exon. Default = 43",
-        default=43,
+         help="Minimum length of the duplicated exon. Default = 27",
+        default=27,
         type=int
     )
 
