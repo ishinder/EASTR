@@ -98,10 +98,10 @@ def bowtie2_align_self_introns_to_ref (introns_to_align, seqs, bt2_index, overha
     return d #TODO return?
 
 def is_two_anchor_alignment(hit,overhang,anchor):
-    c1 = (hit.r_en <= overhang + anchor)
-    c2 = (hit.r_st >= overhang - anchor)
-    c3 = (hit.q_en <= overhang + anchor)
-    c4 = (hit.q_st >= overhang - anchor)
+    c1 = (hit.r_en < overhang + anchor - 1)
+    c2 = (hit.r_st > overhang - anchor)
+    c3 = (hit.q_en < overhang + anchor - 1)
+    c4 = (hit.q_st > overhang - anchor)
     c5 = (abs(hit.r_st - hit.q_st) > anchor * 2)
     if (c1 or c2 or c3 or c4 or c5):
         return False
