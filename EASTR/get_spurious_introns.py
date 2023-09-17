@@ -1,14 +1,15 @@
-from EASTR import extract_junctions
-from EASTR import alignment_utils
-from EASTR import utils
-from EASTR.utils import get_chroms_list_from_fasta
-import subprocess
-import pysam
-import shlex
-from collections import defaultdict
 import os
+import shlex
+import subprocess
 import tempfile
 import time
+from collections import defaultdict
+
+import pysam
+
+from EASTR import alignment_utils, extract_junctions, utils
+from EASTR.utils import get_chroms_list_from_fasta
+
 
 def get_self_aligned_introns(introns, seqs, overhang, k, w, m, scoring):
     self_introns = {}
@@ -49,7 +50,7 @@ def get_middle_seq(len_,seq):
     return seq
 
 
-def bowtie2_align_self_introns_to_ref (introns_to_align, seqs, bt2_index, overhang, p=1, len_=15, bt2_k=10):
+def bowtie2_align_self_introns_to_ref(introns_to_align, seqs, bt2_index, overhang, p=1, len_=15, bt2_k=10):
     bt2_k = bt2_k + 1
     tmp_sam = tempfile.NamedTemporaryFile(dir=os.getcwd(),delete=False)
     tmp_fa = tempfile.NamedTemporaryFile(mode='a',dir=os.getcwd(),delete=False)
@@ -62,7 +63,7 @@ def bowtie2_align_self_introns_to_ref (introns_to_align, seqs, bt2_index, overha
         seq2 = get_middle_seq(len_*2, qseq[hit.q_st:hit.q_en])
         seqh = rseq[overhang-len_:overhang] + qseq[overhang:overhang+len_]
 
-        x = tmp_fa.write(f'>{read_name},seq1\n{seq1}\n' + \
+        tmp_fa.write(f'>{read_name},seq1\n{seq1}\n' + \
                          f'>{read_name},seq2\n{seq2}\n' + \
                          f'>{read_name},seqh\n{seqh}\n')
     tmp_fa.close()
@@ -170,7 +171,7 @@ def get_spurious_introns(self_introns, seqs, bt2_index, overhang, min_duplicate_
 
         introns_to_align[k] = v
 
-    bw2_alignments = bowtie2_align_self_introns_to_ref(introns_to_align, seqs, bt2_index, overhang, p=p, len_=15, bt2_k=bt2_k)
+    bowtie2_align_self_introns_to_ref(introns_to_align, seqs, bt2_index, overhang, p=p, len_=15, bt2_k=bt2_k)
 
     for k, v in introns_to_align.items():
         if is_spurious_alignment(k, v, seqs, overhang, min_duplicate_exon_length, anchor=anchor):
@@ -179,9 +180,29 @@ def get_spurious_introns(self_introns, seqs, bt2_index, overhang, min_duplicate_
     return spurious
 
 
-def get_spurious_junctions(scoring, k, w, m, overhang, min_duplicate_exon_length, bt2_index, bt2_k, ref_fa, p, anchor,
-                            min_junc_score, bam_list, gtf_path,
-                                    bed_path, trusted_bed, out_original_junctions, verbose):
+def get_spurious_junctions(args, scoring, bam_list, bed_path, out_original_junctions):
+    
+    gtf_path = args.gtf
+    ref_fa = args.reference
+    bt2_index = args.bowtie2_index
+    bt2_k = args.bt2_k
+    # EASTR variables
+    overhang = args.o
+    min_duplicate_exon_length = args.min_duplicate_exon_length
+    min_junc_score = args.min_junc_score
+    anchor = args.a
+    trusted_bed = args.trusted_bed
+    verbose = args.verbose
+    # mm2 variables
+    k = args.k
+    w = args.w
+    m = args.m
+    # output args
+    out_original_junctions = args.out_original_junctions
+    # other args
+    p = args.p
+    
+    
     chrom_sizes = get_chroms_list_from_fasta(ref_fa)
 
     if bam_list:

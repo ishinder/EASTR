@@ -235,7 +235,7 @@ def filter_bam_with_vacuum(bam_path, spurious_junctions_bed, out_bam_path, verbo
     
     return out.decode()
 
-def filter_multi_bam_with_vacuum(bam_list, sample_to_bed, out_bam_list, p, verbose, removed_alignments_bam):
+def filter_multi_bam_with_vacuum(bam_list, sample_to_bed, out_bam_list, num_parallel, verbose, removed_alignments_bam):
     #if verbose is true, make a vector of True values for each bam file
     if verbose:
         verbose = [True for bam in bam_list]
@@ -250,7 +250,7 @@ def filter_multi_bam_with_vacuum(bam_list, sample_to_bed, out_bam_list, p, verbo
 
     sample_names = [os.path.splitext(os.path.basename(bam_path))[0] for bam_path in bam_list]
     #run filter_bam_with_vacuum in parallel with multiprocessing starmap
-    pool = multiprocessing.Pool(processes=p)
+    pool = multiprocessing.Pool(processes=num_parallel)
     with pool:
         outs = pool.starmap(filter_bam_with_vacuum, zip(bam_list, [sample_to_bed[sample] for sample in sample_names], 
                                                  out_bam_list, verbose, removed_alignments_bam))
