@@ -4,7 +4,7 @@
 \(-.-\)  
 o\(''\)(''\)  
 
-EASTR is a tool for detecting and removing spurious splice junctions in RNA-seq datasets. It improves the accuracy of transcriptome assembly and quantification by identifying and removing misaligned spliced alignments. The tool can process GTF, BED, and BAM files as input. EASTR can be applied to any RNA-seq dataset regardless of the alignment software used.
+EASTR is a tool for detecting and eliminating spuriously spliced alignments in RNA-seq datasets. It improves the accuracy of transcriptome assembly by identifying and removing misaligned spliced alignments. The tool can process GTF, BED, and BAM files as input. EASTR can be applied to any RNA-seq dataset regardless of the alignment software used.
 
 
 ## Required Dependencies
