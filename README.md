@@ -75,6 +75,7 @@ Additionally, the following arguments are required:
 - `--bt2_k` : Minimum number of distinct alignments found by bowtie2 for a junction to be considered spurious. Default: 10
 - `-o` : Length of the overhang on either side of the splice junction. Default: 50
 - `-a` : Minimum required anchor length in each of the two exons. Default: 7
+- `--min_duplicate_exon_length`: Minimum length that a one-anchor alignment shift must meet or exceed to be considered as representing duplicated exons. It is used to differentiate between exon duplications and spurious splice alignments. Default: 27
 - `--min_junc_score` : Minimum number of supporting spliced reads required per junction. Default: 1
 - `--trusted_bed` : Path to a BED file path with trusted junctions, which will not be removed by EASTR.
 - `--verbose` : Display additional information during BAM filtering, including the count of total spliced alignments and removed alignments
@@ -99,6 +100,8 @@ Additionally, the following arguments are required:
 - `--out_filtered_bam` : Write filtered bams to the output file or directory
 - `--filtered_bam_suffix` : Suffix added to the name of the output BAM files. Default: '_EASTR_filtered'
 
+### Other arguments
+- `-p` : Number of parallel processes. Default: 1
 
 ## Usage
 
@@ -121,6 +124,7 @@ The `run_eastr.sh` script in the `tests` directory demonstrates two different wa
         --out_removed_junctions /path/to/output/removed_junctions # optional 
         --removed_alignments_bam #optional
         --verbose #optional
+        -p 12 #optional
     ```
 ### Running EASTR on a GTF
   Run the EASTR pipeline on the GTF file with the following command:  
@@ -151,7 +155,9 @@ When executed on 4 CPUs, the EASTR command to filter 6 BAM files completes in ap
 *Note 1*: Downloading FASTQ files using the `get_fastq.sh` script requires [SRA_toolkit](https://github.com/ncbi/sra-tools)  
 *Note 2*: Converting the GFF reference annotation to GTF in the `get_ref.sh` script requires [gffread](https://github.com/gpertea/gffread)
 
-<!-- 
-# Citation
-To cite EASTR in publications, please use:
-[citation] -->
+
+## Citation
+To cite EASTR in publications, please use the following reference:
+
+Shinder I, Hu R, Ji HJ, Chao KH, Pertea M. EASTR: Identifying and eliminating systematic alignment errors in multi-exon genes. Nat Commun. 2023 Nov 9;14(1):7223. doi: [10.1038/s41467-023-43017-4](https://doi.org/10.1038/s41467-023-43017-4). PMID: [37940654](https://pubmed.ncbi.nlm.nih.gov/37940654/); PMCID: [PMC10632439](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10632439/).
+
