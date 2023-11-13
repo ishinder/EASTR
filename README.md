@@ -23,7 +23,7 @@ The installation steps for running EASTR are outlined below. Installation takes 
 2. Compile junction_extractor and vacuum
     ```bash
     cd utils
-    cmake
+    cmake -DCMAKE_BUILD_TYPE=Release
     make
     ```
 
