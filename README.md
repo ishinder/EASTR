@@ -51,7 +51,10 @@ The installation steps for running EASTR are outlined below. Installation takes 
     ```
 
 4. Install EASTR
+    Ensure you are in the EASTR main directory before proceeding:
 	```bash
+    # Navigate back to the main EASTR directory if you are not already there
+    cd path/to/EASTR
 	# (OPTIONAL) Install in a Python virtual environment
 	# python3 -m virtualenv .venv # (OPTIONAL)
 	# source .venv/bin/activate # (OPTIONAL)
