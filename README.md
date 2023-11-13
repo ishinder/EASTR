@@ -51,6 +51,7 @@ The installation steps for running EASTR are outlined below. Installation takes 
     ```
 
 4. Install EASTR
+
     Ensure you are in the EASTR main directory before proceeding:
 	```bash
     # Navigate back to the main EASTR directory if you are not already there
