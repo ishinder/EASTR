@@ -8,7 +8,7 @@ curl -OJX GET "https://api.ncbi.nlm.nih.gov/datasets/v2alpha/genome/accession/${
 unzip ${accession_number}.zip
 rm ${accession_number}.zip
 
-mkdir ref
+mkdir -p ref
 rm ncbi_dataset/data/assembly_data_report.jsonl
 rm ncbi_dataset/data/dataset_catalog.json
 rm README.md

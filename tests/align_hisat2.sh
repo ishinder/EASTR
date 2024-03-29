@@ -1,3 +1,5 @@
+#!/bin/bash
+
 wd=$(pwd -P)
 hisat_index=$wd/ref/hisat2/hisat_index
 NCPU=$1
