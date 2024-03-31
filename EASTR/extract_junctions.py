@@ -1,10 +1,10 @@
-from collections import defaultdict
+import collections
 import multiprocessing
-import pandas as pd
 import os
-import subprocess
 import shlex
-from EASTR import utils
+import subprocess
+
+import pandas as pd
 
 
 def get_junctions_from_bed(bed_path: str) -> dict:
@@ -21,7 +21,7 @@ def get_junctions_from_bed(bed_path: str) -> dict:
                 print(f"Error in file: {bed_path}")
                 print(f"Offending line: {line}")
                 raise ValueError("Invalid BED format: Expected at least 6 columns.")
-            
+
             start, end = int(start), int(end)
             score = int(score)
             if start > end:
@@ -30,12 +30,11 @@ def get_junctions_from_bed(bed_path: str) -> dict:
     return junctions
 
 def get_junctions_multi_bed(bed_list:list, p) -> dict:
-    pool = multiprocessing.Pool(p)
-    results = pool.map(get_junctions_from_bed, bed_list)
-    pool.close
+    with multiprocessing.Pool(p) as pool:
+        results = pool.map(get_junctions_from_bed, bed_list)
 
-    dd = defaultdict(dict)
-    for (i,d) in enumerate(results):
+    dd = collections.defaultdict(dict)
+    for i, d in enumerate(results):
         name2 = os.path.splitext(os.path.basename(bed_list[i]))[0]
         for key, (name, score) in d.items():
             if key not in dd:
@@ -52,7 +51,7 @@ def junction_extractor(bam_path:str, out_path:str) -> dict:
     name = os.path.splitext(os.path.basename(bam_path))[0]
     cmd = f"junction_extractor -o {out_path} {bam_path}"
     a = subprocess.Popen(shlex.split(cmd), stdout=subprocess.DEVNULL)
-    b = a.communicate() 
+    b = a.communicate()
 
     with open(out_path, 'r') as f:
         first_line = f.readline().strip()
@@ -62,18 +61,17 @@ def junction_extractor(bam_path:str, out_path:str) -> dict:
         skip = 0
 
     df = pd.read_csv(out_path, sep='\t', header=None, skiprows=skip, comment='#')
-    
+
     junctions = {}
-    for index, row in df.iterrows():
+    for _, row in df.iterrows():
         junctions[(row[0],row[1],row[2],row[5])] = (name,row[4])
     return junctions
 
 def junction_extractor_multi_bam(bam_list:list, out_original_junctions:list, p:int) -> dict:
-    pool = multiprocessing.Pool(p)
-    results = pool.starmap(junction_extractor, zip(bam_list,out_original_junctions))
-    pool.close
-    dd = defaultdict(dict)
+    with multiprocessing.Pool(p) as pool:
+        results = pool.starmap(junction_extractor, zip(bam_list,out_original_junctions))
 
+    dd = collections.defaultdict(dict)
     for d in results:
         for key, value in d.items():
             if key not in dd:
@@ -88,7 +86,7 @@ def junction_extractor_multi_bam(bam_list:list, out_original_junctions:list, p:i
 
 def extract_splice_sites_gtf(gtf_path:str) -> dict:
     trans = {}
-    gtf =open(gtf_path, "r")
+    gtf = open(gtf_path, "r")
 
     for line in gtf:
         line = line.strip()
@@ -101,7 +99,7 @@ def extract_splice_sites_gtf(gtf_path:str) -> dict:
 
         if feature != 'exon':
             continue
-        
+
         if start > end:
             raise Exception("Start of region can not be greater than end of region for:\n",line)
 
@@ -110,7 +108,7 @@ def extract_splice_sites_gtf(gtf_path:str) -> dict:
             if attr:
                 attr, _, val = attr.strip().partition(' ')
                 values_dict[attr] = val.strip('"')
-        
+
         if 'gene_id' not in values_dict:
             values_dict['gene_id'] = "NA"
 
@@ -130,14 +128,14 @@ def extract_splice_sites_gtf(gtf_path:str) -> dict:
             exons.sort()
 
 
-    junctions = defaultdict(dict)
+    junctions = collections.defaultdict(dict)
     for tran, (chrom, strand, gene_id, exons) in trans.items():
         for i in range(1, len(exons)):
             if 'transcripts' not in junctions[(chrom, exons[i-1][1], exons[i][0]-1, strand)]:
                 junctions[(chrom, exons[i-1][1], exons[i][0]-1, strand)]['transcripts'] = [gene_id, [tran]]
             else:
                 junctions[(chrom, exons[i-1][1], exons[i][0]-1, strand)]['transcripts'][1].append(tran) #intron bed coordinates
-    
+
     return junctions
 
 # if __name__ == '__main__':
