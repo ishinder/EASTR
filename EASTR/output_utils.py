@@ -141,7 +141,7 @@ def create_sample_to_bed_dict(sample_names, out_removed_junctions_filelist):
 
     for sample in sample_names:
         shortest_match = None
-        for _, sample_id in enumerate(out_removed_junctions_filelist):
+        for sample_id in out_removed_junctions_filelist:
             if sample in sample_id:
                 if shortest_match is None or len(sample_id) < len(shortest_match):
                     shortest_match = sample_id
