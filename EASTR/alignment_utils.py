@@ -39,7 +39,7 @@ def calc_alignment_score(hit,scoring):
     if hit is None:
         return None
 
-    #TODO verify AS/alignment store calc
+    # TODO verify alignment_score calc
     matches = hit.mlen
     gap_penalty = 0
     cs = hit.cs
@@ -58,9 +58,9 @@ def calc_alignment_score(hit,scoring):
     m = p.findall(cs)
     mismatches = len(m)
 
-    result = matches*scoring[0] - (mismatches)*scoring[1] - gap_penalty
+    alignment_score = matches*scoring[0] - (mismatches)*scoring[1] - gap_penalty
 
-    return result
+    return alignment_score
 
 def get_alignment(chrom, jstart, jend, overhang, pysam_fa, max_length, scoring,  k, w, m):
 
