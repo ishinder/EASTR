@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Input arguments
-sra_list_file="sra_list_adabidopsis.txt"
+sra_list_file="sra_list_arabidopsis.txt"
 accession_number="GCA_000001735.2"
 NCPU=16
 
@@ -20,5 +20,5 @@ bash build_bowtie_index.sh $NCPU
 # 5. align with hisat2
 bash align_hisat2.sh $NCPU
 
-# 5. run eastr
+# 6. run eastr
 bash run_eastr.sh $NCPU
