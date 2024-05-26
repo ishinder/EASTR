@@ -80,7 +80,7 @@ def out_filtered_bam_filelist(bam_list:list, out_filtered_bam, suffix="_EASTR_fi
 
 def writer_spurious_dict_bam_to_bed(spurious_dict, named_keys, scoring, writer):
     for key, value in spurious_dict.items():
-        chrom , start, end, strand = key
+        chrom, start, end, strand = key
         name = named_keys[key]
         score = value['score']
         samples = value['samples']
@@ -91,13 +91,13 @@ def writer_spurious_dict_bam_to_bed(spurious_dict, named_keys, scoring, writer):
 
 def writer_spurious_dict_gtf_to_bed(spurious_dict, named_keys, scoring, writer):
     for key, value in spurious_dict.items():
-        chrom , start, end, strand = key
+        chrom, start, end, strand = key
         gene_id = value['transcripts'][0]
-        tanscripts = value['transcripts'][1]
+        transcripts = value['transcripts'][1]
         name = named_keys[key]
         score = '.'
         score2 = alignment_utils.calc_alignment_score(value['hit'],scoring)
-        name2 = ';'.join([f"{gene_id}", *tanscripts])
+        name2 = ';'.join([f"{gene_id}", *transcripts])
         writer.writerow([chrom, start, end, name, score, strand, score2, name2])
 
 def writer_spurious_dict_bed_to_bed(spurious_dict, named_keys, scoring, writer):   
