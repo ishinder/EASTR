@@ -1,27 +1,29 @@
+import io
 import csv
-import shlex
-import subprocess
-from typing import List, Union
-from io import StringIO
 import multiprocessing
 import os
-import tempfile
-from EASTR import utils, alignment_utils
+import shlex
+import subprocess
 import sys
+import tempfile
+from typing import List, Union
+
+from EASTR import alignment_utils
+from EASTR import utils
 
 def out_junctions_filelist(bam_list:list, gtf_path, bed_list, out_junctions, suffix="") -> Union[List[str], None, str]:
     if out_junctions is None:
         return None
-    
+
     if gtf_path:
         if utils.check_directory_or_file(out_junctions) == 'dir':
-            out_junctions= out_junctions + "/" + os.path.splitext(os.path.basename(gtf_path)[0]) + suffix + ".bed"     
+            out_junctions= out_junctions + "/" + os.path.splitext(os.path.basename(gtf_path)[0]) + suffix + ".bed"
         return out_junctions
-    
+
     if bed_list:
         if suffix in ["_original_junctions", ""]:
             return None
-        
+
         if len(bed_list) == 1:
             if utils.check_directory_or_file(out_junctions) == 'dir':
                 out_junctions = f"{out_junctions}/{os.path.splitext(os.path.basename(gtf_path))[0]}{suffix}.bed"
@@ -32,13 +34,13 @@ def out_junctions_filelist(bam_list:list, gtf_path, bed_list, out_junctions, suf
         if utils.check_directory_or_file(out_junctions) == 'file':
             print("ERROR: the path provided for the output bed files is a file path, not a directory")
             sys.exit(1)
-        
+
         utils.make_dir(out_junctions)
-        out_junctions_filelist = []
+        result = []
         for bed in bed_list:
-            out_junctions_filelist.append(f"{out_junctions}/{os.path.splitext(os.path.basename(bed))[0]}{suffix}.bed")
-        return out_junctions_filelist
-    
+            result.append(f"{out_junctions}/{os.path.splitext(os.path.basename(bed))[0]}{suffix}.bed")
+        return result
+
     if len(bam_list) == 1:
         if utils.check_directory_or_file(out_junctions) == 'dir':
             out_junctions = f"{out_junctions}/{os.path.splitext(os.path.basename(bam_list[0]))[0]}{suffix}.bed"
@@ -51,12 +53,13 @@ def out_junctions_filelist(bam_list:list, gtf_path, bed_list, out_junctions, suf
         sys.exit(1)
 
     utils.make_dir(out_junctions)
-    out_junctions_filelist = []
+    result = []
     for bam in bam_list:
-        out_junctions_filelist.append(out_junctions + "/" + os.path.splitext(os.path.basename(bam))[0] + suffix + ".bed")
-    return out_junctions_filelist
+        result.append(out_junctions + "/" + os.path.splitext(os.path.basename(bam))[0] + suffix + ".bed")
+    return result
 
 def out_filtered_bam_filelist(bam_list:list, out_filtered_bam, suffix="_EASTR_filtered") -> Union[List[str], None]:
+    result = None
     if bam_list is None or out_filtered_bam is None:
         return
 
@@ -65,18 +68,18 @@ def out_filtered_bam_filelist(bam_list:list, out_filtered_bam, suffix="_EASTR_fi
             out_filtered_bam = out_filtered_bam + "/" + os.path.splitext(os.path.basename(bam_list[0]))[0] + suffix + ".bam"
         path = os.path.dirname(out_filtered_bam)
         utils.make_dir(path)
-        out_filtered_bam_filelist = [out_filtered_bam]
+        result = [out_filtered_bam]
 
     else:
         if utils.check_directory_or_file(out_filtered_bam) == 'file':
             print("ERROR: the path provided for the output file is a file, not a directory")
             sys.exit(1)
         utils.make_dir(out_filtered_bam)
-        out_filtered_bam_filelist = []
+        result = []
         for bam in bam_list:
-            out_filtered_bam_filelist.append(out_filtered_bam + "/" + os.path.splitext(os.path.basename(bam))[0] + suffix + ".bam")
+            result.append(out_filtered_bam + "/" + os.path.splitext(os.path.basename(bam))[0] + suffix + ".bam")
 
-    return out_filtered_bam_filelist
+    return result
 
 def writer_spurious_dict_bam_to_bed(spurious_dict, named_keys, scoring, writer):
     for key, value in spurious_dict.items():
@@ -100,7 +103,7 @@ def writer_spurious_dict_gtf_to_bed(spurious_dict, named_keys, scoring, writer):
         name2 = ';'.join([f"{gene_id}", *transcripts])
         writer.writerow([chrom, start, end, name, score, strand, score2, name2])
 
-def writer_spurious_dict_bed_to_bed(spurious_dict, named_keys, scoring, writer):   
+def writer_spurious_dict_bed_to_bed(spurious_dict, named_keys, scoring, writer):
     for key, value in spurious_dict.items():
         chrom, start, end, strand = key
         name = named_keys[key]
@@ -116,9 +119,9 @@ def spurious_dict_all_to_bed(spurious_dict,scoring,fileout,gtf_path, bed_list, b
     for i, key in enumerate(sorted_keys):
         name = "JUNC{}".format(i+1)
         named_keys[key] = name
-    out = StringIO()
-    writer = csv.writer(out, delimiter='\t')    
-    
+    out = io.StringIO()
+    writer = csv.writer(out, delimiter='\t')
+
     if gtf_path is not None:
         writer_spurious_dict_gtf_to_bed(spurious_dict, named_keys, scoring, writer)
     elif bed_list is not None:
@@ -135,10 +138,10 @@ def spurious_dict_all_to_bed(spurious_dict,scoring,fileout,gtf_path, bed_list, b
 
 def create_sample_to_bed_dict(sample_names, out_removed_junctions_filelist):
     sample_to_bed = {}
-    
+
     for sample in sample_names:
         shortest_match = None
-        for i, sample_id in enumerate(out_removed_junctions_filelist):
+        for sample_id in out_removed_junctions_filelist:
             if sample in sample_id:
                 if shortest_match is None or len(sample_id) < len(shortest_match):
                     shortest_match = sample_id
@@ -146,7 +149,7 @@ def create_sample_to_bed_dict(sample_names, out_removed_junctions_filelist):
             file_path = out_removed_junctions_filelist[out_removed_junctions_filelist.index(shortest_match)]
             file_obj = open(file_path, mode='w+b')
             sample_to_bed[sample] = file_obj
-            
+
     return sample_to_bed
 
 
@@ -159,7 +162,6 @@ def spurious_dict_bed_by_sample_to_bed(spurious_dict, bed_list, out_removed_junc
         return
 
     sorted_keys = sorted(spurious_dict.keys())
-    named_keys = {}
     num_digits = len(str(len(sorted_keys)))
 
     for i, key in enumerate(sorted_keys):
@@ -185,7 +187,7 @@ def spurious_dict_bam_by_sample_to_bed(spurious_dict, bam_list, out_removed_junc
 
     #dictionary where the key is the sample name and the value is a file path
     sample_to_bed = {}
-    
+
     if out_removed_junctions_filelist is None:
         for sample in sample_names:
             sample_to_bed[sample] = tempfile.NamedTemporaryFile(delete=False, dir='tmp', suffix='.bed')
@@ -232,7 +234,7 @@ def filter_bam_with_vacuum(bam_path, spurious_junctions_bed, out_bam_path, verbo
         print(f"stdout: {out.decode('utf-8')}")
         print(f"stderr: {err.decode('utf-8')}")
         sys.exit(1)
-    
+
     return out.decode()
 
 def filter_multi_bam_with_vacuum(bam_list, sample_to_bed, out_bam_list, p, verbose, removed_alignments_bam):
@@ -241,7 +243,7 @@ def filter_multi_bam_with_vacuum(bam_list, sample_to_bed, out_bam_list, p, verbo
         verbose = [True for bam in bam_list]
     else:
         verbose = [False for bam in bam_list]
-    
+
     if removed_alignments_bam:
         removed_alignments_bam = [True for bam in bam_list]
     else:
@@ -252,7 +254,7 @@ def filter_multi_bam_with_vacuum(bam_list, sample_to_bed, out_bam_list, p, verbo
     #run filter_bam_with_vacuum in parallel with multiprocessing starmap
     pool = multiprocessing.Pool(processes=p)
     with pool:
-        outs = pool.starmap(filter_bam_with_vacuum, zip(bam_list, [sample_to_bed[sample] for sample in sample_names], 
+        outs = pool.starmap(filter_bam_with_vacuum, zip(bam_list, [sample_to_bed[sample] for sample in sample_names],
                                                  out_bam_list, verbose, removed_alignments_bam))
     if verbose:
         for out in outs:
@@ -287,4 +289,3 @@ def filter_multi_bam_with_vacuum(bam_list, sample_to_bed, out_bam_list, p, verbo
 #     # spurious_alignments, NH = get_spurious_alignments(bam_path, spurious_introns)
 #     # end = time.time()
 #     # print(f"took {(end-start)/60} mins"))
-

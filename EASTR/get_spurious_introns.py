@@ -1,18 +1,20 @@
-from EASTR import extract_junctions
-from EASTR import alignment_utils
-from EASTR import utils
-from EASTR.utils import get_chroms_list_from_fasta
-import subprocess
-import pysam
-import shlex
-from collections import defaultdict
+import collections
 import os
+import shlex
+import subprocess
 import tempfile
 import time
 
+import pysam
+
+from EASTR import extract_junctions
+from EASTR import alignment_utils
+from EASTR import utils
+
+
 def get_self_aligned_introns(introns, seqs, overhang, k, w, m, scoring):
     self_introns = {}
-    for key,value in introns.items():
+    for key, value in introns.items():
         rseq = seqs[introns[key]['jstart']]
         qseq = seqs[introns[key]['jend']]
         hit = alignment_utils.align_seq_pair(rseq, qseq, scoring,k,w,m)
@@ -34,7 +36,7 @@ def get_self_aligned_introns(introns, seqs, overhang, k, w, m, scoring):
 
 def linear_distance(string1, string2):
     if len(string1)!=len(string2):
-        raise Exception("strings must be of equal length")
+        raise ValueError("strings must be of equal length")
     distance = 0
     for i in range(len(string1)):
         if string1[i] != string2[i]:
@@ -70,10 +72,10 @@ def bowtie2_align_self_introns_to_ref (introns_to_align, seqs, bt2_index, overha
 
     #TODO -R {bt2_k} -N 2?
     cmd = f"bowtie2 -p {p} --end-to-end -k {bt2_k} -D 20 -R 5 -L 20 -N 1 -i S,1,0.50 -x {bt2_index} -f {tmp_fa.name} -S {tmp_sam.name}"
-    subprocess.run(shlex.split(cmd),stderr=subprocess.DEVNULL)
+    subprocess.run(shlex.split(cmd),stderr=subprocess.DEVNULL, check=True)
     samfile = pysam.AlignmentFile(tmp_sam.name,'r')
 
-    d = defaultdict(list)
+    d = collections.defaultdict(list)
     for alignment in samfile.fetch(until_eof=True):
         qname= alignment.qname.split(',')
         qname[1] = int(qname[1])
@@ -121,7 +123,7 @@ def is_spurious_alignment(key, value, seqs, overhang, min_duplicate_exon_length,
                 # print(key)
                 return False
 
-    
+
     else:
         #if duplicated exon:
         if hit.q_st - hit.r_st >= min_duplicate_exon_length:
@@ -149,7 +151,6 @@ def is_spurious_alignment(key, value, seqs, overhang, min_duplicate_exon_length,
                 # print("partial alignment - no overhang")
                 # print(key)
                 return False
-            
             else:
                 # print("partial alignment - has overhang")
                 # print(key)
@@ -182,7 +183,7 @@ def get_spurious_introns(self_introns, seqs, bt2_index, overhang, min_duplicate_
 def get_spurious_junctions(scoring, k, w, m, overhang, min_duplicate_exon_length, bt2_index, bt2_k, ref_fa, p, anchor,
                             min_junc_score, bam_list, gtf_path,
                                     bed_path, trusted_bed, out_original_junctions, verbose):
-    chrom_sizes = get_chroms_list_from_fasta(ref_fa)
+    chrom_sizes = utils.get_chroms_list_from_fasta(ref_fa)
 
     if bam_list:
         is_bam = True
@@ -198,11 +199,11 @@ def get_spurious_junctions(scoring, k, w, m, overhang, min_duplicate_exon_length
                 f.close()
             out_original_junctions = [f.name for f in out_original_junctions]
 
-        
+
         if verbose:
             start_extr = time.time()
             print('extracting junctions from bam files...')
-        
+
         introns = extract_junctions.junction_extractor_multi_bam(bam_list,out_original_junctions,p)
 
         if verbose:

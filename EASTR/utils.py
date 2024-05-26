@@ -1,6 +1,7 @@
-import os
-import pysam
 import collections
+import os
+
+import pysam
 
 
 def index_fasta(ref_fa):
@@ -26,4 +27,3 @@ def check_directory_or_file(path:str) -> str:
         return 'file'
     else:
         return 'dir'
-

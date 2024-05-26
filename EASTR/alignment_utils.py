@@ -1,13 +1,10 @@
+import os
+import re
 import shlex
 import subprocess
-import pysam
-import mappy as mp
-from collections import defaultdict, namedtuple
-import re
-import multiprocessing
-from itertools import repeat
 import tempfile
-import os
+
+import mappy as mp
 
 def get_seq(chrom,start,end,pysam_fa):
     seq = pysam_fa.fetch(region=chrom,start=start,end=end)
@@ -18,13 +15,13 @@ def align_seq_pair(rseq:str, qseq:str, scoring:list, k:int, w:int, m:int, best_n
     #TODO ambiguous bases not working
     a = mp.Aligner(seq=rseq,k=k,w=w,best_n=best_n,scoring=scoring,min_chain_score=m)
     itr = list(a.map(qseq,MD=True,cs=True))
-    
+
     if best_n > 1:
         return itr
 
     if not itr:
         return
-    
+
     for hit in itr:
         #TODO if hit.r_st==intron_len <- look for additional alignments?
         #or it is not needed because the longest alignment is the "best" one?
@@ -42,11 +39,11 @@ def calc_alignment_score(hit,scoring):
     if hit is None:
         return None
 
-    #TODO verify AS/alignment store calc
+    # TODO verify alignment_score calc
     matches = hit.mlen
     gap_penalty = 0
     cs = hit.cs
-    
+
     #gaps
     p = re.compile('[\\-\\+]([atgc]+)')
     m = p.findall(cs)
@@ -54,19 +51,19 @@ def calc_alignment_score(hit,scoring):
     for gap in m:
         gap_len = len(gap)
         gap_penalty += min(scoring[2] + (gap_len - 1) * scoring[3],
-                            scoring[4] + (gap_len - 1) * scoring[5])  
-        
+                            scoring[4] + (gap_len - 1) * scoring[5])
+
     #mismatches
     p = re.compile('\\*([atgc]+)')
     m = p.findall(cs)
     mismatches = len(m)
-        
-    AS = matches*scoring[0] - (mismatches)*scoring[1] - gap_penalty
 
-    return AS
+    alignment_score = matches*scoring[0] - (mismatches)*scoring[1] - gap_penalty
+
+    return alignment_score
 
 def get_alignment(chrom, jstart, jend, overhang, pysam_fa, max_length, scoring,  k, w, m):
-    
+
 
     intron_len = jend - jstart
 
@@ -79,7 +76,7 @@ def get_alignment(chrom, jstart, jend, overhang, pysam_fa, max_length, scoring, 
     qseq = get_seq(chrom, qstart, qend, pysam_fa )
     hit = align_seq_pair(rseq, qseq, scoring,k,w,m)
 
-    if hit: 
+    if hit:
         #check if the alignment is in the overlap region of short introns
         if overhang * 2 >= intron_len:
 
@@ -92,7 +89,7 @@ def get_alignment(chrom, jstart, jend, overhang, pysam_fa, max_length, scoring, 
 
             if hit.r_st >= overhang and hit.q_en <= overhang:
                 return None
-            
+
     return hit
 
 
@@ -108,7 +105,7 @@ def get_flanking_subsequences(introns,chrom_sizes,overhang,ref_fa):
     seen = set()
     for key in list(introns.keys()):
         chrom = key[0]
-        jstart = (key[1])
+        jstart = key[1]
         jend = key[2]
         max_length = chrom_sizes[chrom]
         rstart = max(jstart - overhang + 1, 1) #1 based
@@ -130,15 +127,15 @@ def get_flanking_subsequences(introns,chrom_sizes,overhang,ref_fa):
             if r not in seen:
                 t=tmp_regions.write(f'{r}\n')
                 seen.add(r)
-    
+
 
     tmp_regions.close()
     tmp_fa.close()
 
     cmd1 = f"samtools faidx {ref_fa} -r {tmp_regions.name} -o {tmp_fa.name}"
-    p1 = subprocess.run(shlex.split(cmd1))
+    p1 = subprocess.run(shlex.split(cmd1), check=True)
 
-    
+
     seqs = {}
     with open(tmp_fa.name,'r') as f:
         for line in f:
@@ -150,7 +147,7 @@ def get_flanking_subsequences(introns,chrom_sizes,overhang,ref_fa):
                 continue
             sequence = line
             seqs[seq_name]=seqs[seq_name] + sequence
-    
+
     os.unlink(tmp_regions.name)
     os.unlink(tmp_fa.name)
 
