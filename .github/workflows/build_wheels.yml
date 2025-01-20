@@ -27,31 +27,31 @@ jobs:
       uses: pypa/cibuildwheel@v2.22.0
       env:
         CIBW_BEFORE_ALL_LINUX: yum install -y bzip2-devel || apk add --upgrade bzip2-dev || apt-get install -y libbz2-dev
-        CIBW_SKIP: '*-musllinux_i686 *-manylinux_i686 pp*'
+        CIBW_SKIP: '*-musllinux_i686 *-manylinux_i686 pp* *musllinux*'
 
     - uses: actions/upload-artifact@v4
       with:
         name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
         path: ./wheelhouse/*.whl
 
-  build_sdist:
-    name: Build source distribution
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
+  # build_sdist:
+  #   name: Build source distribution
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         submodules: 'recursive'
 
-      - name: Build sdist
-        run: pipx run build --sdist
+  #     - name: Build sdist
+  #       run: pipx run build --sdist
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: cibw-sdist
-          path: dist/*.tar.gz
+  #     - uses: actions/upload-artifact@v4
+  #       with:
+  #         name: cibw-sdist
+  #         path: dist/*.tar.gz
 
   pypi-publish:
-    needs: [build_wheels, build_sdist]
+    needs: [build_wheels]
     name: Upload release to PyPI
     runs-on: ubuntu-latest
     environment:
