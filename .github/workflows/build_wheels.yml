@@ -11,17 +11,14 @@ jobs:
         os: [ ubuntu-latest ]
 
     steps:
-    - name: Install deps
-      run: sudo apt-get install -y libbz2-dev
-
     - uses: actions/checkout@v4
       with:
         submodules: 'recursive'
 
     - name: Build wheels
       uses: pypa/cibuildwheel@v2.22.0
-      # env:
-      #   CIBW_SOME_OPTION: value
+      env:
+        CIBW_BEFORE_ALL_LINUX: apt-get install -y libbz2-dev
       #    ...
       # with:
       #   package-dir: .
