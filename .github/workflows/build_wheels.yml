@@ -8,10 +8,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # macos-13 is an intel runner, macos-14 is apple silicon
-        os: [ ubuntu-latest, windows-latest, macos-13, macos-14 ]
+        os: [ ubuntu-latest ]
 
     steps:
+    - name: Install deps
+      run: sudo apt-get install -y libbz2-dev
+
     - uses: actions/checkout@v4
       with:
         submodules: 'recursive'
