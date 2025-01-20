@@ -54,7 +54,7 @@ class CMakeBuild(build_ext):
     subprocess.check_call(['cmake', '--build', '.', *build_args],
                           cwd=self.build_temp)
 
-description = 'Tool for emending alignments of spuriously spliced transcript reads'
+desc = 'Tool for emending alignments of spuriously spliced transcript reads'
 
 with open('./README.md', 'r', encoding='utf-8') as fh:
   long_description = fh.read()
@@ -67,7 +67,7 @@ setup(
     version='1.0.0',
     author='Ida Shinder',
     author_email='ishinde1@jhmi.edu',
-    description=description,
+    description=desc,
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/ishinder/EASTR',
@@ -90,5 +90,6 @@ setup(
       ]
     },
     python_requires='>=3.10',
-    license = license_str,
+    license='MIT',
+    license_files =('LICENSE',),
 )
