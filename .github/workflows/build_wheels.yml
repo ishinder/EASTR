@@ -23,14 +23,10 @@ jobs:
       with:
         submodules: 'recursive'
 
-    - if: runner.os == 'macOS'
-      run: |
-        echo 'Test'
-
     - name: Build wheels
       uses: pypa/cibuildwheel@v2.22.0
       env:
-        CIBW_BEFORE_ALL_MACOS: brew install autoconf
+        CIBW_BEFORE_ALL_MACOS: brew install autoconf automake
         CIBW_BEFORE_ALL_LINUX: yum install -y bzip2-devel || apk add --upgrade bzip2-dev || apt-get install -y libbz2-dev
         CIBW_SKIP: '*-musllinux_i686 *-manylinux_i686 pp* *musllinux*'
 
