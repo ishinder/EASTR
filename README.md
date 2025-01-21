@@ -40,7 +40,7 @@ a few minutes.
   # python3 -m venv .venv # (OPTIONAL)
   # source .venv/bin/activate # (OPTIONAL)
   pip install -U pip setuptools
-  python3 setup.py install
+  pip install .
   ```
 
 ### Required Arguments
