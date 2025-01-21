@@ -39,7 +39,7 @@ a few minutes.
   cd EASTR
   # python3 -m venv .venv # (OPTIONAL)
   # source .venv/bin/activate # (OPTIONAL)
-  pip install setuptools
+  pip install -U pip setuptools
   python3 setup.py install
   ```
 
