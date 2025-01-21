@@ -1,10 +1,15 @@
 import collections
 import multiprocessing
 import os
+import pathlib
 import shlex
 import subprocess
 
 import pandas as pd
+
+this_directory = pathlib.Path(__file__).resolve().parent
+# This should exist with source after compilation.
+JUNCTION_CMD = os.path.join(this_directory, 'junction_extractor')
 
 
 def get_junctions_from_bed(bed_path: str) -> dict:
@@ -48,8 +53,9 @@ def get_junctions_multi_bed(bed_list:list, p) -> dict:
     return dd
 
 def junction_extractor(bam_path:str, out_path:str) -> dict:
+    check_for_dependency()
     name = os.path.splitext(os.path.basename(bam_path))[0]
-    cmd = f"junction_extractor -o {out_path} {bam_path}"
+    cmd = f"{JUNCTION_CMD} -o {out_path} {bam_path}"
     a = subprocess.Popen(shlex.split(cmd), stdout=subprocess.DEVNULL)
     b = a.communicate()
 
@@ -155,3 +161,7 @@ def extract_splice_sites_gtf(gtf_path:str) -> dict:
 #     x=extract_splice_sites_bam_regtools(bam_path)
 #     end = time.time()
 #     print(f"took {(end-start)/60} mins to get junctions")
+
+def check_for_dependency():
+    if not os.path.exists(JUNCTION_CMD):
+        raise RuntimeError(f"{JUNCTION_CMD} not found.")

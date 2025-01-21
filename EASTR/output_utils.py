@@ -2,6 +2,7 @@ import io
 import csv
 import multiprocessing
 import os
+import pathlib
 import shlex
 import subprocess
 import sys
@@ -10,6 +11,10 @@ from typing import List, Union
 
 from EASTR import alignment_utils
 from EASTR import utils
+
+this_directory = pathlib.Path(__file__).resolve().parent
+# This should exist with source after compilation.
+VACUUM_CMD = os.path.join(this_directory, 'vacuum')
 
 def out_junctions_filelist(bam_list:list, gtf_path, bed_list, out_junctions, suffix="") -> Union[List[str], None, str]:
     if out_junctions is None:
@@ -217,7 +222,8 @@ def spurious_dict_bam_by_sample_to_bed(spurious_dict, bam_list, out_removed_junc
 
 
 def filter_bam_with_vacuum(bam_path, spurious_junctions_bed, out_bam_path, verbose, removed_alignments_bam):
-    vacuum_cmd = "vacuum --remove_mate "
+    check_for_dependency()
+    vacuum_cmd = f"{VACUUM_CMD} --remove_mate "
     if verbose:
         vacuum_cmd = f"{vacuum_cmd} -V"
     if removed_alignments_bam:
@@ -289,3 +295,8 @@ def filter_multi_bam_with_vacuum(bam_list, sample_to_bed, out_bam_list, p, verbo
 #     # spurious_alignments, NH = get_spurious_alignments(bam_path, spurious_introns)
 #     # end = time.time()
 #     # print(f"took {(end-start)/60} mins"))
+
+def check_for_dependency():
+    """Check if runtime dependency exists."""
+    if not os.path.exists(VACUUM_CMD):
+        raise RuntimeError(f"{VACUUM_CMD} not found.")
