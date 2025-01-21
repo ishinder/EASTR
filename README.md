@@ -2,13 +2,16 @@
 
 <p align="center">
 <a href="https://github.com/ishinder/EASTR/blob/main/LICENSE" target="_blank">
-    <img src="https://img.shields.io/pypi/l/eastr" alt="License">
+    <img src="https://img.shields.io/conda/l/bioconda/eastr" alt="License">
+</a>
+<a href="https://anaconda.org/bioconda/eastr" target="_blank">
+    <img src="https://img.shields.io/conda/v/bioconda/eastr" alt="Conda Version">
 </a>
 <a href="https://pypi.org/project/eastr" target="_blank">
-    <img src="https://img.shields.io/pypi/v/eastr" alt="Package version">
+    <img src="https://img.shields.io/pypi/v/eastr" alt="PyPi">
 </a>
-<a href="https://github.com/ishinder/EASTR/releases" target="_blank">
-    <img src="https://img.shields.io/github/v/release/ishinder/eastr" alt="Release">
+<a href="https://anaconda.org/bioconda/eastr/files" target="_blank">
+    <img src="https://img.shields.io/conda/pn/bioconda/eastr" alt="Conda Platform">
 </a>
 </p>
 
@@ -37,9 +40,15 @@ regardless of the alignment software used.
 
 ## Getting Started
 
-The installation steps for running EASTR are outlined below.
+**Installing with conda (Recommended)**
 
-**Installing from source**
+1. Type the following in the terminal
+
+    ```bash
+    conda install bioconda::eastr
+    ```
+
+**Installing from source (Advanced)**
 
 1. Clone repository
 
@@ -47,7 +56,7 @@ The installation steps for running EASTR are outlined below.
    git clone --recurse-submodules https://github.com/ishinder/EASTR.git
    ```
 
-2. Installing from source
+2. Type the following in the terminal
 
     ```bash
     cd EASTR
@@ -56,18 +65,6 @@ The installation steps for running EASTR are outlined below.
     pip install -U pip setuptools
     pip install .
     ```
-
-**Installing from PyPi**
-
-- Type the following in the terminal
-
-    ```bash
-    # python3 -m venv .venv # (OPTIONAL)
-    # source .venv/bin/activate # (OPTIONAL)
-    pip install -U pip setuptools
-    pip install eastr==1.1.0
-    ```
-
 
 ### Required Arguments
 
