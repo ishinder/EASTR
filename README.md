@@ -1,5 +1,7 @@
 # Emending Alignments of Spliced Transcript Reads (EASTR)
 
+![PyPI - License](https://img.shields.io/pypi/l/eastr) ![PyPI - Version](https://img.shields.io/pypi/v/eastr) ![GitHub Release](https://img.shields.io/github/v/release/ishinder/eastr)
+
 \(\\(\\\
 \(-.-\)\
 o\(''\)(''\)
@@ -16,6 +18,7 @@ regardless of the alignment software used.
 
 - [bowtie2 >= 2.5.2](https://github.com/BenLangmead/bowtie2)
 - [samtools >= 1.19](https://github.com/samtools/samtools)
+- [**Python 3.10**](https://www.python.org/downloads/) or newer
 
 **Optional for testing**:
 
@@ -24,8 +27,9 @@ regardless of the alignment software used.
 
 ## Getting Started
 
-The installation steps for running EASTR are outlined below. Installation takes
-a few minutes.
+The installation steps for running EASTR are outlined below.
+
+**Installing from source**
 
 1. Clone repository
 
@@ -33,15 +37,25 @@ a few minutes.
    git clone --recurse-submodules https://github.com/ishinder/EASTR.git
    ```
 
-2. Install source code
+2. Installing from source
 
-  ```bash
-  cd EASTR
-  # python3 -m venv .venv # (OPTIONAL)
-  # source .venv/bin/activate # (OPTIONAL)
-  pip install -U pip setuptools
-  pip install .
-  ```
+    ```bash
+    cd EASTR
+    # python3 -m venv .venv # (OPTIONAL)
+    # source .venv/bin/activate # (OPTIONAL)
+    pip install -U pip setuptools
+    pip install .
+    ```
+
+**Installing from PyPi**
+
+    ```bash
+    # python3 -m venv .venv # (OPTIONAL)
+    # source .venv/bin/activate # (OPTIONAL)
+    pip install -U pip setuptools
+    pip install eastr==1.1.0
+    ```
+
 
 ### Required Arguments
 
