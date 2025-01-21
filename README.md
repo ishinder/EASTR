@@ -27,64 +27,21 @@ regardless of the alignment software used.
 The installation steps for running EASTR are outlined below. Installation takes
 a few minutes.
 
-1. Clone source repository
+1. Clone repository
 
    ```bash
    git clone --recurse-submodules https://github.com/ishinder/EASTR.git
-   cd EASTR
    ```
 
-2. Compile junction_extractor and vacuum
+2. Install source code
 
-   ```bash
-   cd utils
-   cmake -DCMAKE_BUILD_TYPE=Release .
-   make
-   ```
-
-3. To add the junction_extractor and vacuum executables in the `utils` folder to
-   your PATH, you can follow these steps:
-
-   Get the absolute path of the build directory:
-
-   ```bash
-   pwd
-   ```
-
-   This command will print the absolute path of the current directory, which is
-   the `utils` directory.
-
-   Add the absolute path to the PATH environment variable: For temporary use
-   (not persistent across sessions), you can run:
-
-   ```bash
-   export PATH=$PATH:<absolute_path_to_utils_directory>
-   ```
-
-   Replace `<absolute_path_to_utils_directory>` with the path you obtained in
-   the previous step.
-
-   For persistent use (across sessions), you can add the `export` command to
-   your shell's configuration file. For bash, this is typically the `.bashrc` or
-   `.bash_profile` file in your home directory. For zsh, this is the `.zshrc`
-   file. To add the path to your shell configuration file, run:
-
-   ```bash
-   echo 'export PATH=$PATH:<absolute_path_to_utils_directory>' >> ~/.bashrc
-   ```
-
-4. Install EASTR
-
-   Ensure you are in the EASTR main directory before proceeding:
-
-   ```bash
-   # Navigate back to the main EASTR directory if you are not already there
-   cd path/to/EASTR
-   # (OPTIONAL) Install in a Python virtual environment
-   # python3 -m virtualenv .venv # (OPTIONAL)
-   # source .venv/bin/activate # (OPTIONAL)
-   make install # Install EASTR package
-   ```
+  ```bash
+  cd EASTR
+  # python3 -m venv .venv # (OPTIONAL)
+  # source .venv/bin/activate # (OPTIONAL)
+  pip install -U pip setuptools
+  pip install .
+  ```
 
 ### Required Arguments
 

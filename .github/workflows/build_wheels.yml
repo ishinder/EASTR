@@ -1,0 +1,55 @@
+name: Build and upload to PyPI
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # macos-13 is an intel runner, macos-14 is apple silicon
+        os: [ubuntu-latest, macos-13, macos-14]
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+
+    - name: Build wheels
+      uses: pypa/cibuildwheel@v2.22.0
+      env:
+        CIBW_BEFORE_ALL_MACOS: brew install autoconf automake
+        CIBW_BEFORE_ALL_LINUX: yum install -y bzip2-devel || apk add --upgrade bzip2-dev || apt-get install -y libbz2-dev
+        # Skip these architectures, 32-bit, PyPy, and musl
+        CIBW_SKIP: '*-musllinux_i686 *-manylinux_i686 pp* *musllinux*'
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+        path: ./wheelhouse/*.whl
+
+  pypi-publish:
+    needs: [build_wheels]
+    name: Upload release to PyPI
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/<your-pypi-project-name>
+    permissions:
+      id-token: write
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: cibw-*
+        path: dist
+        merge-multiple: true
+
+    - name: Publish package distributions to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      # Testing only
+      # with:
+      #   repository-url: https://test.pypi.org/legacy/
