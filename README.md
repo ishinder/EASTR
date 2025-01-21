@@ -2,21 +2,21 @@
 
 <p align="center">
 <a href="https://github.com/ishinder/EASTR/blob/main/LICENSE" target="_blank">
-    <img src="https://img.shields.io/pypi/l/eastr" alt="License">
+    <img src="https://img.shields.io/conda/l/bioconda/eastr
+    " alt="License">
+</a>
+<a href="https://anaconda.org/bioconda/eastr" target="_blank">
+    <img src="
+    https://img.shields.io/conda/v/bioconda/eastr
+    " alt="Conda Version">
 </a>
 <a href="https://pypi.org/project/eastr" target="_blank">
-    <img src="https://img.shields.io/pypi/v/eastr" alt="Package version">
+    <img src="https://img.shields.io/pypi/v/eastr" alt="PyPi">
 </a>
-<a href="https://github.com/ishinder/EASTR/releases" target="_blank">
-    <img src="https://img.shields.io/github/v/release/ishinder/eastr" alt="Release">
-</a>
-<a href="https://anaconda.org/bioconda/eastr" target="_blank">
+<a href="https://anaconda.org/bioconda/eastr/files" target="_blank">
     <img src="
-    https://anaconda.org/bioconda/eastr/badges/version.svg" alt="Conda Version">
-</a>
-<a href="https://anaconda.org/bioconda/eastr" target="_blank">
-    <img src="
-    https://anaconda.org/bioconda/eastr/badges/latest_release_date.svg" alt="Conda Release">
+    https://img.shields.io/conda/pn/bioconda/eastr
+    " alt="Conda Platform">
 </a>
 </p>
 
