@@ -64,7 +64,7 @@ with open('./LICENSE', 'r', encoding='utf-8') as fh:
 
 setup(
     name='eastr',
-    version='1.1.0',
+    version='1.1.1',  # https://semver.org/
     author='Ida Shinder',
     author_email='ishinde1@jhmi.edu',
     description=desc,
