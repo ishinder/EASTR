@@ -2,21 +2,16 @@
 
 <p align="center">
 <a href="https://github.com/ishinder/EASTR/blob/main/LICENSE" target="_blank">
-    <img src="https://img.shields.io/conda/l/bioconda/eastr
-    " alt="License">
+    <img src="https://img.shields.io/conda/l/bioconda/eastr" alt="License">
 </a>
 <a href="https://anaconda.org/bioconda/eastr" target="_blank">
-    <img src="
-    https://img.shields.io/conda/v/bioconda/eastr
-    " alt="Conda Version">
+    <img src="https://img.shields.io/conda/v/bioconda/eastr" alt="Conda Version">
 </a>
 <a href="https://pypi.org/project/eastr" target="_blank">
     <img src="https://img.shields.io/pypi/v/eastr" alt="PyPi">
 </a>
 <a href="https://anaconda.org/bioconda/eastr/files" target="_blank">
-    <img src="
-    https://img.shields.io/conda/pn/bioconda/eastr
-    " alt="Conda Platform">
+    <img src="https://img.shields.io/conda/pn/bioconda/eastr" alt="Conda Platform">
 </a>
 </p>
 
