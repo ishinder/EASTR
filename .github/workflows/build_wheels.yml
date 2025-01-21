@@ -1,11 +1,6 @@
-name: Build
+name: Build and upload to PyPI
 
 on:
-  workflow_dispatch:
-  pull_request:
-  push:
-    branches:
-      - main
   release:
     types:
       - published
@@ -16,6 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        # macos-13 is an intel runner, macos-14 is apple silicon
         os: [ubuntu-latest, macos-13, macos-14]
 
     steps:
@@ -28,6 +24,7 @@ jobs:
       env:
         CIBW_BEFORE_ALL_MACOS: brew install autoconf automake
         CIBW_BEFORE_ALL_LINUX: yum install -y bzip2-devel || apk add --upgrade bzip2-dev || apt-get install -y libbz2-dev
+        # Skip these architectures, 32-bit, PyPy, and musl
         CIBW_SKIP: '*-musllinux_i686 *-manylinux_i686 pp* *musllinux*'
 
     - uses: actions/upload-artifact@v4
@@ -35,40 +32,24 @@ jobs:
         name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
         path: ./wheelhouse/*.whl
 
-  # build_sdist:
-  #   name: Build source distribution
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         submodules: 'recursive'
-
-  #     - name: Build sdist
-  #       run: pipx run build --sdist
-
-  #     - uses: actions/upload-artifact@v4
-  #       with:
-  #         name: cibw-sdist
-  #         path: dist/*.tar.gz
-
   pypi-publish:
     needs: [build_wheels]
     name: Upload release to PyPI
     runs-on: ubuntu-latest
     environment:
-      name: testpypi
+      name: pypi
+      url: https://pypi.org/p/<your-pypi-project-name>
     permissions:
       id-token: write
     steps:
     - uses: actions/download-artifact@v4
       with:
-        # unpacks all CIBW artifacts into dist/
         pattern: cibw-*
         path: dist
         merge-multiple: true
 
     - name: Publish package distributions to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        repository-url: https://test.pypi.org/legacy/
-        skip-existing: true
+      # Testing only
+      # with:
+      #   repository-url: https://test.pypi.org/legacy/

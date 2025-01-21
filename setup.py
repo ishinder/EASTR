@@ -91,5 +91,5 @@ setup(
     },
     python_requires='>=3.10',
     license='MIT',
-    license_files =('LICENSE',),
+    license_files=('LICENSE',),
 )
