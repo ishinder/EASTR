@@ -1,6 +1,16 @@
 # Emending Alignments of Spliced Transcript Reads (EASTR)
 
-![PyPI - License](https://img.shields.io/pypi/l/eastr) ![PyPI - Version](https://img.shields.io/pypi/v/eastr) ![GitHub Release](https://img.shields.io/github/v/release/ishinder/eastr)
+<p align="center">
+<a href="https://github.com/ishinder/EASTR/blob/main/LICENSE" target="_blank">
+    <img src="https://img.shields.io/pypi/l/eastr" alt="License">
+</a>
+<a href="https://pypi.org/project/eastr" target="_blank">
+    <img src="https://img.shields.io/pypi/v/eastr" alt="Package version">
+</a>
+<a href="https://github.com/ishinder/EASTR/releases" target="_blank">
+    <img src="https://img.shields.io/github/v/release/ishinder/eastr" alt="Release">
+</a>
+</p>
 
 \(\\(\\\
 \(-.-\)\
