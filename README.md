@@ -49,6 +49,8 @@ The installation steps for running EASTR are outlined below.
 
 **Installing from PyPi**
 
+- Type the following in the terminal
+
     ```bash
     # python3 -m venv .venv # (OPTIONAL)
     # source .venv/bin/activate # (OPTIONAL)
