@@ -1,2 +1,3 @@
 recursive-include utils/ *
 exclude utils/.git*
+recursive-exclude docs
