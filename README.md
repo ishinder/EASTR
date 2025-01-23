@@ -45,6 +45,9 @@ regardless of the alignment software used.
 1. Type the following in the terminal
 
     ```bash
+    conda config --add channels bioconda
+    conda config --add channels conda-forge
+    conda config --set channel_priority strict
     conda install bioconda::eastr
     ```
 
