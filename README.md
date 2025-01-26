@@ -52,7 +52,7 @@ samtools) and optional (gffread, sra-tools) dependencies.
 To install from the bioconda channel use the following command:
 
 ```shell
-$ conda install bioconda::eastr
+conda install bioconda::eastr
 ```
 
 **Install using pip**
@@ -66,7 +66,7 @@ To install from pip use the following command:
 ```shell
 # python3 -m venv .venv # (OPTIONAL)
 # source .venv/bin/activate # (OPTIONAL)
-$ pip install eastr
+pip install eastr
 ```
 
 ### Required Arguments
