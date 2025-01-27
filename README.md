@@ -15,9 +15,13 @@
 </a>
 </p>
 
+**Documentation**: [https://ccb.jhu.edu/eastr](https://ccb.jhu.edu/eastr)
+
 \(\\(\\\
 \(-.-\)\
 o\(''\)(''\)
+
+---
 
 EASTR is a tool for detecting and eliminating spuriously spliced alignments in
 RNA-seq datasets. It improves the accuracy of transcriptome assembly by
@@ -36,35 +40,34 @@ regardless of the alignment software used.
 **Optional for testing**:
 
 - [gffread >= 0.12.7](https://github.com/gpertea/gffread)
-- [sra-toolkit >= 3.0.1](https://github.com/ncbi/sra-tools)
+- [sra-tools >= 3.0.1](https://github.com/ncbi/sra-tools)
 
 ## Getting Started
 
-**Installing with conda (Recommended)**
+**Install using conda (Recommended)**
 
-1. Type the following in the terminal
+Installing with conda gives you eastr and all of the required (bowtie2,
+samtools) and optional (gffread, sra-tools) dependencies.
 
-    ```bash
-    conda install bioconda::eastr
-    ```
+To install from the bioconda channel use the following command:
 
-**Installing from source (Advanced)**
+```shell
+conda install bioconda::eastr
+```
 
-1. Clone repository
+**Install using pip**
 
-   ```bash
-   git clone --recurse-submodules https://github.com/ishinder/EASTR.git
-   ```
+You can install the EASTR package directly from PyPi but you will need
+to ensure that all required dependencies (bowtie2 and samtools) have been
+installed and are in your **$PATH** environment variable.
 
-2. Type the following in the terminal
+To install from pip use the following command:
 
-    ```bash
-    cd EASTR
-    # python3 -m venv .venv # (OPTIONAL)
-    # source .venv/bin/activate # (OPTIONAL)
-    pip install -U pip setuptools
-    pip install .
-    ```
+```shell
+# python3 -m venv .venv # (OPTIONAL)
+# source .venv/bin/activate # (OPTIONAL)
+pip install eastr
+```
 
 ### Required Arguments
 
