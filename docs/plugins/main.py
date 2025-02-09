@@ -8,7 +8,9 @@ from mkdocs.structure.files import Files
 from mkdocs.structure.pages import Page
 
 
-def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) -> str:
+def on_page_markdown(
+    markdown: str, page: Page, config: Config, files: Files
+) -> str:
   """Called on each file after it is read and before it is converted to HTML."""
   markdown = eastr_print_help(markdown, page)
   return markdown
