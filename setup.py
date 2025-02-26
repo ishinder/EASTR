@@ -1,4 +1,4 @@
-"""EASTR build."""
+"""eastr setup.py"""
 
 import os
 import platform
@@ -64,7 +64,7 @@ with open('./LICENSE', 'r', encoding='utf-8') as fh:
 
 setup(
     name='eastr',
-    version='1.1.1',  # https://semver.org/
+    version='1.1.2',
     author='Ida Shinder',
     author_email='ishinde1@jhmi.edu',
     description=desc,
@@ -81,12 +81,13 @@ setup(
       'pysam>=0.22.0,<0.23',
     ],
     packages=find_packages(
-      where='./',
-      include=['EASTR'],
+      where='src',
+      include=['eastr'],
     ),
+    package_dir={'': 'src'},
     entry_points={
       'console_scripts': [
-          'eastr = EASTR.run_eastr:main',
+          'eastr = eastr.run_eastr:main',
       ]
     },
     python_requires='>=3.10',

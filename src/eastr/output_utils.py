@@ -9,8 +9,8 @@ import sys
 import tempfile
 from typing import List, Union
 
-from EASTR import alignment_utils
-from EASTR import utils
+from eastr import alignment_utils
+from eastr import utils
 
 this_directory = pathlib.Path(__file__).resolve().parent
 # This should exist with source after compilation.

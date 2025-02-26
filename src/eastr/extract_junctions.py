@@ -144,24 +144,6 @@ def extract_splice_sites_gtf(gtf_path:str) -> dict:
 
     return junctions
 
-# if __name__ == '__main__':
-#     bam_path='tests/data/ERR188044_chrX.bam'
-#     gtf_path = '/ccb/salz8-2/shinder/projects/EASTR/EASTR/tests/data/chrX.gtf'
-#     junctions_bam = extract_splice_sites_bam_regtools(bam_path)
-#     junctions_gtf = extract_splice_sites_gtf(gtf_path)
-
-#     import time
-#     bam_path='/ccb/salz8-2/shinder/projects/EASTR_tests/chess_brain/BAM/original/R2947_C48YFACXX.bam'
-#     start = time.time()
-#     j = extract_splice_sites_bam_custom(bam_path)
-#     end = time.time()
-#     print(f"took {(end-start)/60} mins to get junctions")
-
-#     start = time.time()
-#     x=extract_splice_sites_bam_regtools(bam_path)
-#     end = time.time()
-#     print(f"took {(end-start)/60} mins to get junctions")
-
 def check_for_dependency():
     if not os.path.exists(JUNCTION_CMD):
         raise RuntimeError(f"{JUNCTION_CMD} not found.")

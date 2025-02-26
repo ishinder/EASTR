@@ -1,14 +1,14 @@
 import argparse
 import os
 
-from EASTR import get_spurious_introns
-from EASTR import output_utils
-from EASTR import utils
+from eastr import get_spurious_introns
+from eastr import output_utils
+from eastr import utils
 
-def parse_args(arglist):
+def parse_args():
     parser = argparse.ArgumentParser(
-        prog="EASTR",
-        description="EASTR: Emending alignments of spuriously spliced transcript reads. "
+        prog="eastr",
+        description="eastr: Emending alignments of spuriously spliced transcript reads. "
                     "The script takes GTF, BED, or BAM files as input and processes them using "
                     "the provided reference genome and BowTie2 index. It identifies spurious junctions "
                     "and filters the input data accordingly."
@@ -177,11 +177,9 @@ def minimap_scoring(args):
 
     return scoring
 
-#def write_removed_reads(outfile, removed_reads):
 
-
-def main(arglist=None):
-    args = parse_args(arglist)
+def main():
+    args = parse_args()
 
     #required input args
     bam_list = args.bam
