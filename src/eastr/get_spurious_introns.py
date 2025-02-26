@@ -7,9 +7,9 @@ import time
 
 import pysam
 
-from EASTR import extract_junctions
-from EASTR import alignment_utils
-from EASTR import utils
+from eastr import extract_junctions
+from eastr import alignment_utils
+from eastr import utils
 
 
 def get_self_aligned_introns(introns, seqs, overhang, k, w, m, scoring):

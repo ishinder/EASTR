@@ -160,11 +160,11 @@ cython_debug/
 tests/*
 !tests/*.sh
 !tests/sra_list_arabidopsis.txt
-EASTR/test*/
+eastr/test*/
 tmp/
 tmp*
 
-EASTR/tests/output/chrX_data
+eastr/tests/output/chrX_data
 
 #misc
 delete/
