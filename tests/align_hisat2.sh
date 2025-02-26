@@ -17,7 +17,7 @@ for i in $(ls "$wd"/fastq/*_1.fastq); do
                 -1 "$wd"/fastq/"${name}"_1.fastq \
                 -2 "$wd"/fastq/"${name}"_2.fastq \
                 -S "$TEMPLOC"/"${name}".sam
-        
+
         samtools view -bS "$TEMPLOC"/"${name}".sam | \
         samtools sort -@ $NCPU - -o "$ALIGNLOC"/"${name}"_hisat.bam
         rm "$TEMPLOC"/"${name}".sam
