@@ -22,7 +22,7 @@ def out_junctions_filelist(bam_list:list, gtf_path, bed_list, out_junctions, suf
 
     if gtf_path:
         if utils.check_directory_or_file(out_junctions) == 'dir':
-            out_junctions= out_junctions + "/" + os.path.splitext(os.path.basename(gtf_path)[0]) + suffix + ".bed"
+            out_junctions= f"{out_junctions}/{os.path.splitext(os.path.basename(gtf_path))[0]}{suffix}.bed"
         return out_junctions
 
     if bed_list:
