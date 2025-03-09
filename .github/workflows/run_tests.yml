@@ -20,7 +20,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
     - name: Install dependencies
-      run: python -m pip install --upgrade pip setuptools wheel pysam
+      run: python -m pip install --upgrade pip setuptools wheel pysam mappy
     - name: Test with pytest
       run: |
         pip install pytest pytest-cov
