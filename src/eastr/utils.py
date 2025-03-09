@@ -36,7 +36,7 @@ def get_file_extension(path: str) -> str:
     """Return file extension name from a file path.
     Example:
         input: /var/tmp/file.ext
-        output: ext
+        output: .ext
     """
     base_name = os.path.basename(path)
     _, extension = os.path.splitext(base_name)
