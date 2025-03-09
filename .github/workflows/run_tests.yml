@@ -24,4 +24,4 @@ jobs:
     - name: Test with pytest
       run: |
         pip install pytest pytest-cov
-        pytest src/eastr --cov=eastr
+        pytest -vv src/eastr --cov=eastr
