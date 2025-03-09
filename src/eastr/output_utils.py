@@ -7,7 +7,7 @@ import shlex
 import subprocess
 import sys
 import tempfile
-from typing import List, Union
+from typing import List, Optional, Union
 
 from eastr import alignment_utils
 from eastr import utils
@@ -16,74 +16,112 @@ this_directory = pathlib.Path(__file__).resolve().parent
 # This should exist with source after compilation.
 VACUUM_CMD = os.path.join(this_directory, 'vacuum')
 
-def out_junctions_filelist(bam_list:list, gtf_path, bed_list, out_junctions, suffix="") -> Union[List[str], None, str]:
+def out_junctions_filelist(
+        bam_list: Optional[list[str]] = None,
+        bed_list: Optional[list[str]] = None,
+        gtf_path: Optional[str] = None,
+        out_junctions: Optional[str] = None,
+        suffix: Optional[str] = None,
+) -> Union[List[str], None, str]:
     if out_junctions is None:
         return None
 
     if gtf_path:
-        if utils.check_directory_or_file(out_junctions) == 'dir':
-            out_junctions= out_junctions + "/" + os.path.splitext(os.path.basename(gtf_path)[0]) + suffix + ".bed"
+        if os.path.isdir(out_junctions):
+            out_junctions = os.path.join(
+                out_junctions,
+                utils.sanitize_and_update_extension(gtf_path, f"{suffix}.bed"),
+            )
         return out_junctions
 
     if bed_list:
-        if suffix in ["_original_junctions", ""]:
+        if suffix in {"_original_junctions", "", None}:
             return None
 
         if len(bed_list) == 1:
-            if utils.check_directory_or_file(out_junctions) == 'dir':
-                out_junctions = f"{out_junctions}/{os.path.splitext(os.path.basename(gtf_path))[0]}{suffix}.bed"
+            if os.path.isdir(out_junctions):
+                out_junctions = os.path.join(
+                    out_junctions,
+                    utils.sanitize_and_update_extension(gtf_path, f"{suffix}.bed"),
+                )
             path = os.path.dirname(out_junctions)
             utils.make_dir(path)
             return [out_junctions]
 
-        if utils.check_directory_or_file(out_junctions) == 'file':
+        if not os.path.isdir(out_junctions):
             print("ERROR: the path provided for the output bed files is a file path, not a directory")
             sys.exit(1)
 
         utils.make_dir(out_junctions)
         result = []
         for bed in bed_list:
-            result.append(f"{out_junctions}/{os.path.splitext(os.path.basename(bed))[0]}{suffix}.bed")
+            result.append(
+                os.path.join(
+                    out_junctions,
+                    utils.sanitize_and_update_extension(bed, f"{suffix}.bed"),
+                )
+            )
         return result
 
     if len(bam_list) == 1:
-        if utils.check_directory_or_file(out_junctions) == 'dir':
-            out_junctions = f"{out_junctions}/{os.path.splitext(os.path.basename(bam_list[0]))[0]}{suffix}.bed"
+        if os.path.isdir(out_junctions):
+            out_junctions = os.path.join(
+                out_junctions,
+                utils.sanitize_and_update_extension(bam_list[0], f"{suffix}.bed"),
+            )
         path = os.path.dirname(out_junctions)
         utils.make_dir(path)
         return [out_junctions]
 
-    if utils.check_directory_or_file(out_junctions) == 'file':
+    if not os.path.isdir(out_junctions):
         print("ERROR: the path provided for the output bed files is a file path, not a directory")
         sys.exit(1)
 
     utils.make_dir(out_junctions)
     result = []
     for bam in bam_list:
-        result.append(out_junctions + "/" + os.path.splitext(os.path.basename(bam))[0] + suffix + ".bed")
+        result.append(
+            os.path.join(
+                out_junctions,
+                utils.sanitize_and_update_extension(bam, f"{suffix}.bed"),
+            )
+        )
     return result
 
-def out_filtered_bam_filelist(bam_list:list, out_filtered_bam, suffix="_EASTR_filtered") -> Union[List[str], None]:
+def out_filtered_bam_filelist(
+        bam_list: Optional[list[str]] = None,
+        out_filtered_bam: Optional[str] = None,
+        suffix: Optional[str] = None,
+) -> Union[List[str], None]:
     result = None
     if bam_list is None or out_filtered_bam is None:
-        return
+        return result
+
+    if suffix is None:
+        suffix = "_EASTR_filtered"
 
     if len(bam_list) == 1:
-        if utils.check_directory_or_file(out_filtered_bam) == 'dir':
-            out_filtered_bam = out_filtered_bam + "/" + os.path.splitext(os.path.basename(bam_list[0]))[0] + suffix + ".bam"
+        if os.path.isdir(out_filtered_bam):
+            out_filtered_bam = os.path.join(
+                out_filtered_bam,
+                utils.sanitize_and_update_extension(bam_list[0], f"{suffix}.bam"),
+            )
         path = os.path.dirname(out_filtered_bam)
         utils.make_dir(path)
         result = [out_filtered_bam]
-
     else:
-        if utils.check_directory_or_file(out_filtered_bam) == 'file':
+        if not os.path.isdir(out_filtered_bam):
             print("ERROR: the path provided for the output file is a file, not a directory")
             sys.exit(1)
         utils.make_dir(out_filtered_bam)
         result = []
         for bam in bam_list:
-            result.append(out_filtered_bam + "/" + os.path.splitext(os.path.basename(bam))[0] + suffix + ".bam")
-
+            result.append(
+                os.path.join(
+                out_filtered_bam,
+                utils.sanitize_and_update_extension(bam, f"{suffix}.bam"),
+                )
+            )
     return result
 
 def writer_spurious_dict_bam_to_bed(spurious_dict, named_keys, scoring, writer):
@@ -160,7 +198,7 @@ def create_sample_to_bed_dict(sample_names, out_removed_junctions_filelist):
 
 
 def spurious_dict_bed_by_sample_to_bed(spurious_dict, bed_list, out_removed_junctions_filelist, scoring):
-    sample_names = [os.path.splitext(os.path.basename(bed_path))[0] for bed_path in bed_list]
+    sample_names = [utils.sanitize_name(bed_path) for bed_path in bed_list]
     sample_to_bed = create_sample_to_bed_dict(sample_names, out_removed_junctions_filelist)
 
     if out_removed_junctions_filelist is None:
@@ -188,7 +226,7 @@ def spurious_dict_bed_by_sample_to_bed(spurious_dict, bed_list, out_removed_junc
 def spurious_dict_bam_by_sample_to_bed(spurious_dict, bam_list, out_removed_junctions_filelist, scoring):
 
     #get sample name from bam_list
-    sample_names = [os.path.splitext(os.path.basename(bam_path))[0] for bam_path in bam_list]
+    sample_names = [utils.sanitize_name(bam_path) for bam_path in bam_list]
 
     #dictionary where the key is the sample name and the value is a file path
     sample_to_bed = {}
@@ -227,7 +265,7 @@ def filter_bam_with_vacuum(bam_path, spurious_junctions_bed, out_bam_path, verbo
     if verbose:
         vacuum_cmd = f"{vacuum_cmd} -V"
     if removed_alignments_bam:
-        out_bam_name = os.path.splitext(out_bam_path)[0]
+        out_bam_name, _ = os.path.splitext(out_bam_path)
         vacuum_cmd = f'{vacuum_cmd} -r {out_bam_name}_removed_alignments.bam'
     vacuum_cmd = f'{vacuum_cmd} -o {out_bam_path} {bam_path} {spurious_junctions_bed}'
     vacuum_cmd = shlex.split(vacuum_cmd)
@@ -256,7 +294,7 @@ def filter_multi_bam_with_vacuum(bam_list, sample_to_bed, out_bam_list, p, verbo
         removed_alignments_bam = [False for bam in bam_list]
 
 
-    sample_names = [os.path.splitext(os.path.basename(bam_path))[0] for bam_path in bam_list]
+    sample_names = [utils.sanitize_name(bam_path) for bam_path in bam_list]
     #run filter_bam_with_vacuum in parallel with multiprocessing starmap
     pool = multiprocessing.Pool(processes=p)
     with pool:
@@ -265,36 +303,6 @@ def filter_multi_bam_with_vacuum(bam_list, sample_to_bed, out_bam_list, p, verbo
     if verbose:
         for out in outs:
             print(out)
-
-#def write_gtf_to_bed(spurious_dict, out_removed_junctions_filelist, scoring):
-    # sorted_keys = spurious_dict.keys()
-    # named_keys = {}
-    # for i, key in enumerate(sorted_keys):
-    #     name = "JUNC{}".format(i+1)
-    #     named_keys[key] = name
-
-    # out_io_dict = {}
-    # for i,sample in enumerate(sample_names):
-    #     out_io_dict[sample] = [StringIO(), out_removed_junctions_filelist[i]]
-
-    # for key, value in spurious_dict.items():
-    #     name = named_keys[key]
-    #     samples = value['samples']
-    #     score2 = alignment_utils.calc_alignment_score(value['hit'],scoring)
-    #     for i, sample in enumerate(samples):
-    #         score, sample_id = sample
-    #         out_io_dict[sample_id][0].write(f"{key[0]}\t{key[1]}\t{key[2]}\t{name}\t{score}\t{key[3]}\t{score2}")
-
-    # for (out,filepath) in out_io_dict.values():
-    #     with open(filepath, 'w') as out_removed_junctions:
-    #         out_removed_junctions.write(out.getvalue())
-
-# if __name__ == '__main__':
-#     # import time
-#     # start = time.time()
-#     # spurious_alignments, NH = get_spurious_alignments(bam_path, spurious_introns)
-#     # end = time.time()
-#     # print(f"took {(end-start)/60} mins"))
 
 def check_for_dependency():
     """Check if runtime dependency exists."""
