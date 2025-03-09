@@ -5,6 +5,7 @@ import pathlib
 import shlex
 import subprocess
 
+from eastr import utils
 import pandas as pd
 
 this_directory = pathlib.Path(__file__).resolve().parent
@@ -40,7 +41,7 @@ def get_junctions_multi_bed(bed_list:list, p) -> dict:
 
     dd = collections.defaultdict(dict)
     for i, d in enumerate(results):
-        name2 = os.path.splitext(os.path.basename(bed_list[i]))[0]
+        name2 = utils.sanitize_name(bed_list[i])
         for key, (name, score) in d.items():
             if key not in dd:
                 dd[key]['samples']= set()
@@ -54,7 +55,7 @@ def get_junctions_multi_bed(bed_list:list, p) -> dict:
 
 def junction_extractor(bam_path:str, out_path:str) -> dict:
     check_for_dependency()
-    name = os.path.splitext(os.path.basename(bam_path))[0]
+    name = utils.sanitize_name(bam_path)
     cmd = f"{JUNCTION_CMD} -o {out_path} {bam_path}"
     a = subprocess.Popen(shlex.split(cmd), stdout=subprocess.DEVNULL)
     b = a.communicate()

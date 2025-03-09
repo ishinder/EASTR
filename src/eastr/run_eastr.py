@@ -223,8 +223,8 @@ def main():
         is_bam = True
 
         #if a single bam file is provided
-        extension = os.path.splitext(os.path.basename(bam_list))[1]
-        if extension in ['.bam','.cram','.sam']:
+        extension = utils.get_file_extension(bam_list)
+        if extension in {'.bam','.cram','.sam'}:
             bam_list = [bam_list]
 
         else:
@@ -236,8 +236,8 @@ def main():
 
 
     elif bed_list:
-        extension = os.path.splitext(os.path.basename(bed_list))[1]
-        if extension in ['.bed']:
+        extension = utils.get_file_extension(bed_list)
+        if extension in {'.bed'}:
             bed_list = [bed_list]
 
         else:

@@ -8,10 +8,10 @@ def index_fasta(ref_fa):
     if not os.path.exists(f"{ref_fa}.fai"):
         pysam.faidx(ref_fa)
 
-#Make a new directory
-def make_dir(path):
+def make_dir(path: str):
+    """Make a directory, if it exists just skip."""
     directory = os.path.join(path)
-    os.makedirs(directory,exist_ok=True)
+    os.makedirs(directory, exist_ok=True)
 
 
 def get_chroms_list_from_fasta(ref_fa):
@@ -22,8 +22,26 @@ def get_chroms_list_from_fasta(ref_fa):
         chrom_sizes[chrom] = fasta.get_reference_length(chrom)
     return chrom_sizes
 
-def check_directory_or_file(path:str) -> str:
-    if os.path.splitext(os.path.basename(path))[1]!='':
-        return 'file'
-    else:
-        return 'dir'
+def sanitize_name(path: str) -> str:
+    """Return base name from path without extension.
+    Example:
+        input: /var/tmp/file.ext
+        output: file
+    """
+    base_name = os.path.basename(path)
+    name_without_extension, _ = os.path.splitext(base_name)
+    return name_without_extension
+
+def get_file_extension(path: str) -> str:
+    """Return file extension name from a file path.
+    Example:
+        input: /var/tmp/file.ext
+        output: ext
+    """
+    base_name = os.path.basename(path)
+    _, extension = os.path.splitext(base_name)
+    return extension
+
+def sanitize_and_update_extension(path, extension) -> str:
+    base_name = sanitize_name(path)
+    return f"{base_name}{extension}"
