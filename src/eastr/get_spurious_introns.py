@@ -35,9 +35,16 @@ def get_self_aligned_introns(introns, seqs, overhang, k, w, m, scoring):
 
 
 def linear_distance(string1, string2):
+    """Calculate Hamming distance between two sequences (case-insensitive).
+
+    Nucleotide comparisons are case-insensitive since 'A' and 'a' represent
+    the same base (lowercase typically indicates repeat-masked regions).
+    """
     if len(string1)!=len(string2):
         raise ValueError("strings must be of equal length")
     distance = 0
+    string1 = string1.upper()
+    string2 = string2.upper()
     for i in range(len(string1)):
         if string1[i] != string2[i]:
             distance += 1
