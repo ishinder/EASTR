@@ -144,6 +144,16 @@ def spurious_dict_all_to_bed(spurious_dict,scoring,fileout,gtf_path, bed_list, b
 def create_sample_to_bed_dict(sample_names, out_removed_junctions_filelist):
     sample_to_bed = {}
 
+    # If sample count matches output file count, use positional pairing
+    # This handles the case where user provides custom output filenames
+    # that don't contain the sample names
+    if len(sample_names) == len(out_removed_junctions_filelist):
+        for sample, file_path in zip(sample_names, out_removed_junctions_filelist):
+            file_obj = open(file_path, mode='w+b')
+            sample_to_bed[sample] = file_obj
+        return sample_to_bed
+
+    # Otherwise, try to match samples to files by substring matching
     for sample in sample_names:
         shortest_match = None
         for sample_id in out_removed_junctions_filelist:
@@ -154,6 +164,9 @@ def create_sample_to_bed_dict(sample_names, out_removed_junctions_filelist):
             file_path = out_removed_junctions_filelist[out_removed_junctions_filelist.index(shortest_match)]
             file_obj = open(file_path, mode='w+b')
             sample_to_bed[sample] = file_obj
+        else:
+            raise ValueError(f"Could not find output file for sample '{sample}'. "
+                           f"Available files: {out_removed_junctions_filelist}")
 
     return sample_to_bed
 
