@@ -90,10 +90,11 @@ def bowtie2_align_self_introns_to_ref (introns_to_align, seqs, bt2_index, overha
         qname = tuple(qname)
         d[qname].append(alignment)
 
-        if qname[4] == 'seqh':
-            if alignment.is_unmapped:
+        # Handle unmapped reads - set count to 0 and skip
+        if alignment.is_unmapped:
+            if qname[4] not in introns_to_align[qname[0:4]]:
                 introns_to_align[qname[0:4]][qname[4]] = 0
-                continue
+            continue
 
         if qname[4] not in introns_to_align[qname[0:4]]:
             introns_to_align[qname[0:4]][qname[4]] = 1
