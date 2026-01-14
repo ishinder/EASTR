@@ -56,8 +56,8 @@ def calc_alignment_score(hit,scoring):
     gaps = len(m)
     for gap in m:
         gap_len = len(gap)
-        gap_penalty += min(scoring[2] + (gap_len - 1) * scoring[3],
-                            scoring[4] + (gap_len - 1) * scoring[5])
+        gap_penalty += min(scoring[2] + gap_len * scoring[3],
+                            scoring[4] + gap_len * scoring[5])
 
     #mismatches - case-insensitive to handle both uppercase and lowercase nucleotides
     p = re.compile('\\*([atgc]+)', re.IGNORECASE)
