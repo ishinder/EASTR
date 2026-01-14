@@ -66,7 +66,7 @@ def junction_extractor(bam_path:str, out_path:str) -> dict:
     else:
         skip = 0
 
-    df = pd.read_csv(out_path, sep='\t', header=None, skiprows=skip, comment='#')
+    df = pd.read_csv(out_path, sep='\t', header=None, skiprows=skip, comment='#', dtype={0: str})
 
     junctions = {}
     for _, row in df.iterrows():
