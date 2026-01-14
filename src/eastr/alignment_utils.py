@@ -51,7 +51,8 @@ def calc_alignment_score(hit,scoring):
     cs = hit.cs
 
     #gaps - case-insensitive to handle both uppercase and lowercase nucleotides
-    p = re.compile('[\\-\\+]([atgc]+)', re.IGNORECASE)
+    #include 'n' for ambiguous bases
+    p = re.compile('[\\-\\+]([atgcn]+)', re.IGNORECASE)
     m = p.findall(cs)
     gaps = len(m)
     for gap in m:
@@ -60,7 +61,8 @@ def calc_alignment_score(hit,scoring):
                             scoring[4] + gap_len * scoring[5])
 
     #mismatches - case-insensitive to handle both uppercase and lowercase nucleotides
-    p = re.compile('\\*([atgc]+)', re.IGNORECASE)
+    #include 'n' for ambiguous bases
+    p = re.compile('\\*([atgcn]+)', re.IGNORECASE)
     m = p.findall(cs)
     mismatches = len(m)
 
