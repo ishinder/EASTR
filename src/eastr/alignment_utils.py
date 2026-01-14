@@ -7,8 +7,14 @@ import tempfile
 import mappy as mp
 
 def get_seq(chrom,start,end,pysam_fa):
+    """Fetch sequence from FASTA file, normalized to uppercase.
+
+    Sequences are normalized to uppercase because FASTA files may contain
+    lowercase letters to indicate repeat-masked regions, but 'A' and 'a'
+    represent the same nucleotide.
+    """
     seq = pysam_fa.fetch(region=chrom,start=start,end=end)
-    return seq
+    return seq.upper()
 
 
 def align_seq_pair(rseq:str, qseq:str, scoring:list, k:int, w:int, m:int, best_n=1):
@@ -44,8 +50,8 @@ def calc_alignment_score(hit,scoring):
     gap_penalty = 0
     cs = hit.cs
 
-    #gaps
-    p = re.compile('[\\-\\+]([atgc]+)')
+    #gaps - case-insensitive to handle both uppercase and lowercase nucleotides
+    p = re.compile('[\\-\\+]([atgc]+)', re.IGNORECASE)
     m = p.findall(cs)
     gaps = len(m)
     for gap in m:
@@ -53,8 +59,8 @@ def calc_alignment_score(hit,scoring):
         gap_penalty += min(scoring[2] + (gap_len - 1) * scoring[3],
                             scoring[4] + (gap_len - 1) * scoring[5])
 
-    #mismatches
-    p = re.compile('\\*([atgc]+)')
+    #mismatches - case-insensitive to handle both uppercase and lowercase nucleotides
+    p = re.compile('\\*([atgc]+)', re.IGNORECASE)
     m = p.findall(cs)
     mismatches = len(m)
 
@@ -145,7 +151,8 @@ def get_flanking_subsequences(introns,chrom_sizes,overhang,ref_fa):
                 if seq_name not in seqs:
                     seqs[seq_name] = ''
                 continue
-            sequence = line
+            # Normalize to uppercase - FASTA may contain lowercase for repeat-masked regions
+            sequence = line.upper()
             seqs[seq_name]=seqs[seq_name] + sequence
 
     os.unlink(tmp_regions.name)
