@@ -15,6 +15,14 @@
 </a>
 </p>
 
+> **🚀 A faster C++ implementation is now available:**
+> ```bash
+> conda install -c bioconda eastr-cpp
+> ```
+> The C++ version provides ~10x faster performance with identical results. See [eastr-cpp](https://github.com/ishinder/eastr-cpp) for details.
+
+---
+
 **Documentation**: [https://ccb.jhu.edu/eastr](https://ccb.jhu.edu/eastr)
 
 \(\\(\\\
